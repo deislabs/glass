@@ -98,9 +98,17 @@ void glass_runtime_handler(
 > Note that this is currently not fully functional.
 
 ```javascript
-function handler(req, res) {
+async function handler(req, res) {
+  console.log(
+    "The answer to life, the universe, and everything: " + (await getAnswer())
+  );
+
   console.log(req.method());
   res.status = 200;
+}
+
+async function getAnswer() {
+  return 42;
 }
 ```
 
@@ -108,20 +116,8 @@ Running this with the example JS file from the runtime root results in the
 following:
 
 ```
-Handling request... in JS runtime...
-content-type: text/plain
-
-Yup, writing WAGI handlers using JavaScript!
-
-Oh look, async functions work too!
-
-Value of parameter: 46
 The answer to life, the universe, and everything: 42
-How about text encoders and decoders?
-
-Hello
-226,130,172
-[2021-08-09T06:22:10Z INFO  glass_runtime::ctx] Result status code: 404
+[2021-08-09T06:22:10Z INFO  glass_runtime::ctx] Result status code: 200
 [2021-08-09T06:22:10Z INFO  glass_runtime::ctx] Total execution time: 27.9057ms
 ```
 
