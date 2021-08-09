@@ -254,24 +254,3 @@ pub struct Ctx {
     pub wasi_ctx: Option<WasiCtx>,
     pub runtime_data: Option<GlassRuntimeData>,
 }
-
-#[cfg(test)]
-mod tests {
-    // use crate::Runtime;
-
-    // #[tokio::test]
-    // async fn test_start_runtime() {
-    //     env_logger::init();
-    //     let request = http::Request::builder()
-    //         .method("GET")
-    //         .uri("https://www.rust-lang.org/")
-    //         .header("X-Custom-Foo", "Bar")
-    //         .header("ana-are-mere", "marcel-pavel")
-    //         .body(None)
-    //         .unwrap();
-    //     let r = Runtime::new("http://localhost:8000/v1", "grtest/0.10.0")
-    //         .await
-    //         .unwrap();
-    //     r.execute(request).unwrap();
-    // }
-}
