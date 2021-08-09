@@ -1,0 +1,21 @@
+[package]
+name = "glass"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0"
+bytes = "1"
+futures = "0.3"
+glass-runtime = { path = "crates/runtime" }
+env_logger = "0.8"
+log = { version = "0.4", default-features = false }
+hyper = {version = "0.14", features = ["full"]}
+serde = { version = "1.0", features = ["derive"] }
+structopt = "0.3.21"
+tokio = { version = "1.1", features = ["full"] }
+
+[workspace]
+members = [
+    "crates/runtime",
+]

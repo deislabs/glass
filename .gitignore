@@ -1,0 +1,9 @@
+target
+.wasmtime-cache
+.wacm-cache
+.wasi
+spidermonkey/
+*.wasm
+*.wat
+*.o
+*.d
