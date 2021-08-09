@@ -104,9 +104,30 @@ function handler(req, res) {
 }
 ```
 
+Running this with the example JS file from the runtime root results in the
+following:
+
+```
+Handling request... in JS runtime...
+content-type: text/plain
+
+Yup, writing WAGI handlers using JavaScript!
+
+Oh look, async functions work too!
+
+Value of parameter: 46
+The answer to life, the universe, and everything: 42
+How about text encoders and decoders?
+
+Hello
+226,130,172
+[2021-08-09T06:22:10Z INFO  glass_runtime::ctx] Result status code: 404
+[2021-08-09T06:22:10Z INFO  glass_runtime::ctx] Total execution time: 27.9057ms
+```
+
 ### Notes and acknowledgements
 
-This project is inspired from a number of projects both the cloud and
+This project is inspired from a number of projects from the cloud and
 WebAssembly ecosystems:
 
 - [`wasmtime-functions`][wf]
