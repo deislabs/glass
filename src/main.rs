@@ -1,7 +1,6 @@
-use anyhow::{bail, Context, Error};
+use anyhow::{bail, Error};
 use glass_runtime_http::{listener::Listener, runtime::Runtime};
 use structopt::{clap::AppSettings, StructOpt};
-use wasi_cap_std_sync::Dir;
 
 #[tokio::main]
 pub async fn main() -> Result<(), Error> {
@@ -22,6 +21,7 @@ impl Opt {
                     self.local.clone(),
                     self.vars.clone(),
                     dirs,
+                    self.allowed_hosts.clone(),
                 )
                 .await
             }
@@ -54,11 +54,30 @@ pub struct Opt {
     )]
     vars: Vec<(String, String)>,
 
-    #[structopt(long = "dir", number_of_values = 1, value_name = "DIRECTORY")]
+    #[structopt(
+        long = "dir",
+        global = true,
+        number_of_values = 1,
+        value_name = "DIRECTORY"
+    )]
     dirs: Vec<String>,
 
-    #[structopt(long = "mapdir", number_of_values = 1, value_name = "GUEST_DIR::HOST_DIR", parse(try_from_str = parse_map_dirs))]
+    #[structopt(
+        long = "mapdir",
+        global = true,
+        number_of_values = 1,
+        value_name = "GUEST_DIR::HOST_DIR",
+        parse(try_from_str = parse_map_dirs)
+    )]
     map_dirs: Vec<(String, String)>,
+
+    #[structopt(
+        short = "a",
+        long = "allowed-host",
+        global = true,
+        help = "Host the guest module is allowed to make outbound HTTP requests to"
+    )]
+    allowed_hosts: Option<Vec<String>>,
 
     #[structopt(
         long = "reference",
@@ -100,13 +119,14 @@ impl HttpCmd {
         reference: Option<String>,
         local: Option<String>,
         vars: Vec<(String, String)>,
-        preopen_dirs: Vec<(String, Dir)>,
+        preopen_dirs: Vec<(String, String)>,
+        allowed_http_hosts: Option<Vec<String>>,
     ) -> Result<(), Error> {
         let runtime = match reference {
-            Some(r) => Runtime::new(&server, &r, vars, preopen_dirs).await?,
+            Some(r) => Runtime::new(&server, &r, vars, preopen_dirs, allowed_http_hosts).await?,
             None => {
                 match local {
-                    Some(l) => Runtime::new_from_local(l, vars, preopen_dirs)?,
+                    Some(l) => Runtime::new_from_local(l, vars, preopen_dirs, allowed_http_hosts)?,
                     None => panic!("either a remote registry reference or local file must be passed to start the server")
                 }
             }
@@ -139,23 +159,15 @@ fn parse_map_dirs(s: &str) -> Result<(String, String), Error> {
 fn compute_preopen_dirs(
     dirs: Vec<String>,
     map_dirs: Vec<(String, String)>,
-) -> Result<Vec<(String, Dir)>, Error> {
+) -> Result<Vec<(String, String)>, Error> {
     let mut preopen_dirs = Vec::new();
 
     for dir in dirs.iter() {
-        preopen_dirs.push((
-            dir.clone(),
-            unsafe { Dir::open_ambient_dir(dir) }
-                .with_context(|| format!("failed to open directory '{}'", dir))?,
-        ));
+        preopen_dirs.push((dir.clone(), dir.clone()));
     }
 
     for (guest, host) in map_dirs.iter() {
-        preopen_dirs.push((
-            guest.clone(),
-            unsafe { Dir::open_ambient_dir(host) }
-                .with_context(|| format!("failed to open directory '{}'", host))?,
-        ));
+        preopen_dirs.push((guest.clone(), host.clone()));
     }
 
     Ok(preopen_dirs)
