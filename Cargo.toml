@@ -20,3 +20,9 @@ wasi-cap-std-sync = "0.28"
 members = [
     "crates/http"
 ]
+
+exclude = [
+    "crates/wacm/crates/wacm-bindle",
+    "crates/wacm/crates/wacm-macros",
+    "crates/wacm/crates/wacm"
+]
