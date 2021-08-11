@@ -7,21 +7,11 @@ edition = "2018"
 anyhow = "1.0"
 async-trait = "0.1"
 bytes = "1"
-wasmtime = "0.28"
-wasmtime-wasi = "0.28"
-wasmtime-cache = "0.28"
-wasi-common = "0.28"
-wasi-cap-std-sync = "0.28"
-cap-std = "0.13"
-wasi-experimental-http-wasmtime = "0.5"
-bindle = { version = "0.3", default-features = false, features = ["client"] }
-url = "2.2"
-sha2 = "0.9"
+http = "0.2"
 env_logger = "0.8"
+glass-runtime-context = { path = "../context" }
+hyper = {version = "0.14", features = ["full"]}
 log = { version = "0.4", default-features = false }
 tokio = "1.5.0"
+wasmtime = "0.28"
 witx-bindgen-wasmtime = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "0e087ecc73dd4b74ff48ff28302dd410b10d8e3c"}
-http = "0.2"
-# wacm-bindle = { git = "https://github.com/deislabs/wacm", rev = "12e640ca0233fe273bfa6cb8b3574aeb02e9970a" }
-wacm-bindle = { path = "../wacm/crates/wacm-bindle" }
-hyper = {version = "0.14", features = ["full"]}

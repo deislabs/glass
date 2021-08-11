@@ -4,19 +4,23 @@ use crate::{
 };
 use anyhow::Error;
 use async_trait::async_trait;
-use bindle::client::Client;
+use glass_runtime_context::RegistryHelper;
 use hyper::Body;
-use std::{fs::OpenOptions, io::Write, path::PathBuf, str::FromStr, sync::Arc, time::Instant};
-use wasmtime::{Config, Engine, Instance, InstancePre, Linker, Module, Store};
-use wasmtime_wasi::*;
+use std::{str::FromStr, sync::Arc, time::Instant};
+use wasmtime::{Engine, Instance, InstancePre, Module, Store};
 
-const WASMTIME_CACHE_DIR: &str = ".wasmtime-cache";
-const WACM_CACHE_DIR: &str = ".wasi";
-const RUNTIME_INTERFACE: &str = "glass_runtime";
+type Context = glass_runtime_context::Context<DeislabsHttpV01Data>;
+
+const HTTP_INTERFACE: &str = "deislabs_http_v01";
 
 #[derive(Clone)]
 pub struct Runtime {
-    pre: Arc<InstancePre<Ctx>>,
+    entrypoint_path: String,
+    vars: Vec<(String, String)>,
+    preopen_dirs: Vec<(String, String)>,
+    allowed_http_hosts: Option<Vec<String>>,
+
+    pre: Arc<InstancePre<Context>>,
     engine: Engine,
 }
 
@@ -25,14 +29,15 @@ impl listener::HttpRuntime for Runtime {
     async fn execute(&self, req: hyper::Request<Body>) -> Result<hyper::Response<Body>, Error> {
         let start = Instant::now();
 
-        // create a new store so each request gets its own instance and data
-        let mut store = self.store(Vec::new(), Vec::new())?;
+        let vars = &self.vars;
+        let preopen_dirs = &self.preopen_dirs;
+        let mut store =
+            Context::store_with_data(&self.engine, None, vars.clone(), preopen_dirs.clone())?;
         let instance = self.pre.instantiate(&mut store)?;
 
-        // execute the instance's entrypoint using the request data and return the response
         let res = self.execute_impl(store, instance, req).await?;
 
-        log::info!("Total execution time: {:#?}", start.elapsed());
+        log::info!("Total request execution time: {:#?}", start.elapsed());
 
         Ok(res)
     }
@@ -40,7 +45,7 @@ impl listener::HttpRuntime for Runtime {
 impl Runtime {
     async fn execute_impl(
         &self,
-        mut store: Store<Ctx>,
+        mut store: Store<Context>,
         instance: Instance,
         req: hyper::Request<Body>,
     ) -> Result<hyper::Response<Body>, Error> {
@@ -82,134 +87,52 @@ impl Runtime {
         server: &str,
         reference: &str,
         vars: Vec<(String, String)>,
-        preopen_dirs: Vec<(String, Dir)>,
+        preopen_dirs: Vec<(String, String)>,
+        allowed_http_hosts: Option<Vec<String>>,
     ) -> Result<Self, Error> {
-        let entrypoint_path = Runtime::entrypoint_from_bindle(&server, &reference).await?;
+        let entrypoint_path =
+            RegistryHelper::entrypoint_from_bindle(&server, &reference, HTTP_INTERFACE).await?;
 
-        Self::create_runtime(entrypoint_path, vars, preopen_dirs)
+        Self::create_runtime_context(entrypoint_path, vars, preopen_dirs, allowed_http_hosts)
     }
 
     pub fn new_from_local(
         entrypoint_path: String,
         vars: Vec<(String, String)>,
-        preopen_dirs: Vec<(String, Dir)>,
+        preopen_dirs: Vec<(String, String)>,
+        allowed_http_hosts: Option<Vec<String>>,
     ) -> Result<Self, Error> {
-        Self::create_runtime(entrypoint_path, vars, preopen_dirs)
-    }
-    // TODO
-    // Populate the store with runtime specific data.
-    fn store(
-        &self,
-        vars: Vec<(String, String)>,
-        preopen_dirs: Vec<(String, Dir)>,
-    ) -> Result<Store<Ctx>, Error> {
-        let mut builder = WasiCtxBuilder::new()
-            .inherit_stdin()
-            .inherit_stdout()
-            .inherit_stderr()
-            .envs(&vars)?;
-
-        for (name, dir) in preopen_dirs.into_iter() {
-            builder = builder.preopened_dir(dir, name)?;
-        }
-
-        let mut store = Store::new(&self.engine, Ctx::default());
-
-        store.data_mut().wasi_ctx = Some(builder.build());
-
-        Ok(store)
+        Self::create_runtime_context(entrypoint_path, vars, preopen_dirs, allowed_http_hosts)
     }
 
-    fn create_runtime(
+    fn create_runtime_context(
         entrypoint_path: String,
         vars: Vec<(String, String)>,
-        preopen_dirs: Vec<(String, Dir)>,
+        preopen_dirs: Vec<(String, String)>,
+        allowed_http_hosts: Option<Vec<String>>,
     ) -> Result<Self, Error> {
         let start = Instant::now();
 
-        let mut config = Config::default();
-        config.wasm_multi_memory(true);
-        config.wasm_module_linking(true);
-        if let Ok(p) = std::fs::canonicalize(WASMTIME_CACHE_DIR) {
-            config.cache_config_load(p)?;
-        };
+        let ctx = Context::default();
+        let (engine, mut store, linker) = ctx.get_engine_store_linker(
+            vars.clone(),
+            preopen_dirs.clone(),
+            allowed_http_hosts.clone(),
+        )?;
 
-        let engine = Engine::new(&config)?;
-        let mut linker: Linker<Ctx> = Linker::new(&engine);
-        let mut store = Store::new(&engine, Ctx::default());
-
-        linker.allow_unknown_exports(true);
-        linker.allow_shadowing(true);
-        Runtime::populate_with_wasi(&mut store, &mut linker, vars, preopen_dirs)?;
-
-        let module = Module::from_file(linker.engine(), entrypoint_path)?;
-        let pre = linker.instantiate_pre(&mut store, &module)?;
-        let pre = Arc::new(pre);
+        let module = Module::from_file(linker.engine(), entrypoint_path.clone())?;
+        let pre = Arc::new(linker.instantiate_pre(&mut store, &module)?);
 
         log::info!("Created runtime from module in: {:#?}", start.elapsed());
 
-        Ok(Runtime { pre, engine })
-    }
-
-    async fn entrypoint_from_bindle(server: &str, reference: &str) -> Result<String, Error> {
-        let start = Instant::now();
-
-        let linking_path = PathBuf::from(WACM_CACHE_DIR).join("_linking");
-        let bindler = Client::new(server)?;
-
-        wacm_bindle::utils::download_bindle(
-            bindler,
-            reference.to_string(),
-            &linking_path,
-            Some("dat".into()),
-        )
-        .await?;
-
-        log::info!("Downloaded bindle in: {:?}", start.elapsed(),);
-
-        let start = Instant::now();
-
-        let out = wacm_bindle::linker::Linker::link_component_for_interface_to_bytes(
-            linking_path.to_string_lossy().into(),
-            RUNTIME_INTERFACE.to_string(),
-        )?;
-
-        log::info!("Linked bindle in: {:?}", start.elapsed(),);
-
-        let start = Instant::now();
-
-        let entrypoint_path = linking_path.join("entrypoint.wasm");
-        let mut f = OpenOptions::new()
-            .create(true)
-            .write(true)
-            .open(entrypoint_path.clone())?;
-        f.write_all(&out)?;
-
-        log::info!("Wrote entrypoint to file in : {:?}", start.elapsed(),);
-
-        Ok(entrypoint_path.to_string_lossy().to_string())
-    }
-
-    fn populate_with_wasi(
-        store: &mut Store<Ctx>,
-        linker: &mut Linker<Ctx>,
-        vars: Vec<(String, String)>,
-        preopen_dirs: Vec<(String, Dir)>,
-    ) -> Result<(), Error> {
-        wasmtime_wasi::add_to_linker(linker, |host| host.wasi_ctx.as_mut().unwrap())?;
-
-        let mut builder = WasiCtxBuilder::new()
-            .inherit_stdin()
-            .inherit_stdout()
-            .inherit_stderr()
-            .envs(&vars)?;
-
-        for (name, dir) in preopen_dirs.into_iter() {
-            builder = builder.preopened_dir(dir, name)?;
-        }
-        store.data_mut().wasi_ctx = Some(builder.build());
-
-        Ok(())
+        Ok(Runtime {
+            entrypoint_path,
+            vars,
+            preopen_dirs,
+            allowed_http_hosts,
+            pre,
+            engine,
+        })
     }
 
     /// Generate a string vector from an HTTP header map.
@@ -259,10 +182,4 @@ impl Runtime {
             None => Ok(()),
         }
     }
-}
-
-#[derive(Default)]
-pub struct Ctx {
-    pub wasi_ctx: Option<WasiCtx>,
-    pub runtime_data: Option<DeislabsHttpV01Data>,
 }

@@ -31,7 +31,7 @@ async fn test_example(entrypoint: &str, exp_status: u16, exp_body: Vec<u8>) {
         .header("X-Custom-Foo2", "Bar2")
         .body(body::Body::empty())
         .unwrap();
-    let r = Runtime::new_from_local(entrypoint.to_string(), Vec::new(), Vec::new()).unwrap();
+    let r = Runtime::new_from_local(entrypoint.to_string(), Vec::new(), Vec::new(), None).unwrap();
     let res = r.execute(req).await.unwrap();
 
     println!("response status: {:?}", res.status());

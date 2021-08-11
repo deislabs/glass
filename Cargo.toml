@@ -18,9 +18,13 @@ wasi-cap-std-sync = "0.28"
 
 [workspace]
 members = [
-    "crates/http"
+    "crates/http",
+    "crates/context"
 ]
 
+# TODO
+# Remove the component manager from workspace and from submodules
+# once we have a public repository.
 exclude = [
     "crates/wacm/crates/wacm-bindle",
     "crates/wacm/crates/wacm-macros",

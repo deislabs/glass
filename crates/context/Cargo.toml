@@ -1,0 +1,22 @@
+[package]
+name = "glass-runtime-context"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+anyhow = "1.0"
+async-trait = "0.1"
+bindle = { version = "0.3", default-features = false, features = ["client"] }
+cap-std = "0.13"
+env_logger = "0.8"
+log = { version = "0.4", default-features = false }
+tokio = "1.5.0"
+witx-bindgen-wasmtime = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "0e087ecc73dd4b74ff48ff28302dd410b10d8e3c"}
+wacm-bindle = { path = "../wacm/crates/wacm-bindle" }
+wasi-experimental-http-wasmtime = { git = "https://github.com/radu-matei/wasi-experimental-http", branch = "generic-linker" }
+wasi-nn-onnx-wasmtime = { git = "https://github.com/deislabs/wasi-nn-onnx", default-features = true }
+wasmtime = "0.28"
+wasmtime-wasi = "0.28"
+wasmtime-cache = "0.28"
+wasi-common = "0.28"
+wasi-cap-std-sync = "0.28"
