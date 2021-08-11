@@ -21,8 +21,7 @@ log = { version = "0.4", default-features = false }
 tokio = "1.5.0"
 witx-bindgen-wasmtime = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "0e087ecc73dd4b74ff48ff28302dd410b10d8e3c"}
 http = "0.2"
-# wacm-bindle = { git = "https://github.com/deislabs/wacm", rev = "c6f9c5cab5281753796b1823115fe970e3ce32db" }
-wacm-bindle = { path = "../../../wacm/crates/wacm-bindle" }
+wacm-bindle = { git = "https://github.com/deislabs/wacm", rev = "12e640ca0233fe273bfa6cb8b3574aeb02e9970a" }
 hyper = {version = "0.14", features = ["full"]}
 
 # [workspace]

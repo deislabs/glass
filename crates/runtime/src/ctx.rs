@@ -58,10 +58,10 @@ impl Runtime {
         let b = hyper::body::to_bytes(b).await?.to_vec();
         let req = (m, u.as_str(), &headers[..], None, Some(&b[..]));
 
-        let (status, _, body) = r.handler(&mut store, req)?;
+        let (status, headers, body) = r.handler(&mut store, req)?;
         log::info!("Result status code: {}", status);
-        let hr = http::Response::builder().status(status);
-        // append_headers(hr.headers_mut().unwrap(), headers)?;
+        let mut hr = http::Response::builder().status(status);
+        append_headers(hr.headers_mut().unwrap(), headers)?;
 
         let body = match body {
             Some(b) => Body::from(b),
@@ -126,13 +126,6 @@ impl Runtime {
 
         let start = Instant::now();
 
-        // Currently, linking doesn't really work.
-        // The Wasmtime bindings expect the resulting linked module
-        // to export free and realloc functions, which it doesn't.
-        // This means that for now, we can't  use linked components, and the
-        // handler has to be self-contained.
-        //
-        // See https://github.com/bytecodealliance/witx-bindgen/issues/59
         let out = wacm_bindle::linker::Linker::link_component_for_interface_to_bytes(
             linking_path.to_string_lossy().into(),
             RUNTIME_INTERFACE.to_string(),
@@ -253,4 +246,27 @@ fn append_headers(
 pub struct Ctx {
     pub wasi_ctx: Option<WasiCtx>,
     pub runtime_data: Option<GlassRuntimeData>,
+}
+
+#[cfg(test)]
+mod tests {
+    use hyper::body;
+
+    use crate::Runtime;
+
+    #[tokio::test]
+    async fn test_start_runtime() {
+        env_logger::init();
+        let request = http::Request::builder()
+            .method("GET")
+            .uri("https://www.rust-lang.org/")
+            .header("X-Custom-Foo", "Bar")
+            .header("ana-are-mere", "marcel-pavel")
+            .body(body::Body::empty())
+            .unwrap();
+        let r = Runtime::new("http://localhost:8000/v1", "components-test/0.15.0")
+            .await
+            .unwrap();
+        r.execute(request).await.unwrap();
+    }
 }
