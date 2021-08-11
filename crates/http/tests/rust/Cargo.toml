@@ -1,0 +1,12 @@
+[package]
+name = "simple-rust"
+version = "0.1.0"
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+witx-bindgen-rust = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "9970a1c584bd1d27ff121f0c9a94373cef2e75cb"}
+
+[workspace]

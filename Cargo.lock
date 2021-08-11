@@ -841,19 +841,21 @@ dependencies = [
  "bytes",
  "env_logger 0.8.4",
  "futures",
- "glass-runtime",
+ "glass-runtime-http",
  "hyper",
  "log",
  "serde",
  "structopt",
  "tokio",
+ "wasi-cap-std-sync",
 ]
 
 [[package]]
-name = "glass-runtime"
+name = "glass-runtime-http"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "bindle",
  "bytes",
  "cap-std",
@@ -2301,6 +2303,7 @@ checksum = "5fecdca9a5291cc2b8dcf7dc02453fee791a280f3743cb0905f8822ae463b3fe"
 [[package]]
 name = "wacm-bindle"
 version = "0.1.0"
+source = "git+https://github.com/deislabs/wacm?rev=12e640ca0233fe273bfa6cb8b3574aeb02e9970a#12e640ca0233fe273bfa6cb8b3574aeb02e9970a"
 dependencies = [
  "anyhow",
  "bindle",
@@ -2318,7 +2321,7 @@ dependencies = [
  "wasmtime",
  "wasmtime-wasi",
  "wat",
- "witx2 0.1.0",
+ "witx2 0.1.0 (git+https://github.com/bytecodealliance/witx-bindgen?rev=a67ab5de8f95b04408393a5679952132b18cf508)",
 ]
 
 [[package]]
@@ -2483,6 +2486,7 @@ dependencies = [
 [[package]]
 name = "wasmlink"
 version = "0.1.0"
+source = "git+https://github.com/bytecodealliance/witx-bindgen?rev=a67ab5de8f95b04408393a5679952132b18cf508#a67ab5de8f95b04408393a5679952132b18cf508"
 dependencies = [
  "anyhow",
  "heck",
@@ -2490,7 +2494,7 @@ dependencies = [
  "petgraph",
  "wasm-encoder",
  "wasmparser",
- "witx2 0.1.0",
+ "witx2 0.1.0 (git+https://github.com/bytecodealliance/witx-bindgen?rev=a67ab5de8f95b04408393a5679952132b18cf508)",
 ]
 
 [[package]]
@@ -2914,6 +2918,7 @@ dependencies = [
 [[package]]
 name = "witx2"
 version = "0.1.0"
+source = "git+https://github.com/bytecodealliance/witx-bindgen?rev=0e087ecc73dd4b74ff48ff28302dd410b10d8e3c#0e087ecc73dd4b74ff48ff28302dd410b10d8e3c"
 dependencies = [
  "anyhow",
  "id-arena",
@@ -2922,7 +2927,7 @@ dependencies = [
 [[package]]
 name = "witx2"
 version = "0.1.0"
-source = "git+https://github.com/bytecodealliance/witx-bindgen?rev=0e087ecc73dd4b74ff48ff28302dd410b10d8e3c#0e087ecc73dd4b74ff48ff28302dd410b10d8e3c"
+source = "git+https://github.com/bytecodealliance/witx-bindgen?rev=a67ab5de8f95b04408393a5679952132b18cf508#a67ab5de8f95b04408393a5679952132b18cf508"
 dependencies = [
  "anyhow",
  "id-arena",

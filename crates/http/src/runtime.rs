@@ -1,5 +1,9 @@
-use crate::glass_runtime::{GlassRuntime, GlassRuntimeData, Method};
+use crate::{
+    bindings::deislabs_http_v01::{DeislabsHttpV01, DeislabsHttpV01Data, Method},
+    listener,
+};
 use anyhow::Error;
+use async_trait::async_trait;
 use bindle::client::Client;
 use hyper::Body;
 use std::{fs::OpenOptions, io::Write, path::PathBuf, str::FromStr, sync::Arc, time::Instant};
@@ -16,28 +20,31 @@ pub struct Runtime {
     engine: Engine,
 }
 
-impl Runtime {
-    pub async fn execute(&self, req: hyper::Request<Body>) -> Result<hyper::Response<Body>, Error> {
+#[async_trait]
+impl listener::HttpRuntime for Runtime {
+    async fn execute(&self, req: hyper::Request<Body>) -> Result<hyper::Response<Body>, Error> {
         let start = Instant::now();
 
         // create a new store so each request gets its own instance and data
         let mut store = self.store(Vec::new(), Vec::new())?;
         let instance = self.pre.instantiate(&mut store)?;
 
+        // execute the instance's entrypoint using the request data and return the response
         let res = self.execute_impl(store, instance, req).await?;
 
         log::info!("Total execution time: {:#?}", start.elapsed());
 
         Ok(res)
     }
-
+}
+impl Runtime {
     async fn execute_impl(
         &self,
         mut store: Store<Ctx>,
         instance: Instance,
         req: hyper::Request<Body>,
     ) -> Result<hyper::Response<Body>, Error> {
-        let r = GlassRuntime::new(&mut store, &instance, |host| {
+        let r = DeislabsHttpV01::new(&mut store, &instance, |host| {
             host.runtime_data.as_mut().unwrap()
         })?;
 
@@ -51,7 +58,7 @@ impl Runtime {
         };
         let u = req.uri().to_string();
 
-        let headers = header_map_to_vec(req.headers())?;
+        let headers = Runtime::header_map_to_vec(req.headers())?;
         let headers: Vec<&str> = headers.iter().map(|s| &**s).collect();
 
         let (_, b) = req.into_parts();
@@ -61,7 +68,7 @@ impl Runtime {
         let (status, headers, body) = r.handler(&mut store, req)?;
         log::info!("Result status code: {}", status);
         let mut hr = http::Response::builder().status(status);
-        append_headers(hr.headers_mut().unwrap(), headers)?;
+        Runtime::append_headers(hr.headers_mut().unwrap(), headers)?;
 
         let body = match body {
             Some(b) => Body::from(b),
@@ -71,17 +78,53 @@ impl Runtime {
         Ok(hr.body(body)?)
     }
 
-    pub async fn new(server: &str, reference: &str) -> Result<Self, Error> {
+    pub async fn new(
+        server: &str,
+        reference: &str,
+        vars: Vec<(String, String)>,
+        preopen_dirs: Vec<(String, Dir)>,
+    ) -> Result<Self, Error> {
         let entrypoint_path = Runtime::entrypoint_from_bindle(&server, &reference).await?;
 
-        Self::runtime_from_module(entrypoint_path)
+        Self::create_runtime(entrypoint_path, vars, preopen_dirs)
     }
 
-    pub fn new_from_local(entrypoint_path: String) -> Result<Self, Error> {
-        Self::runtime_from_module(entrypoint_path)
+    pub fn new_from_local(
+        entrypoint_path: String,
+        vars: Vec<(String, String)>,
+        preopen_dirs: Vec<(String, Dir)>,
+    ) -> Result<Self, Error> {
+        Self::create_runtime(entrypoint_path, vars, preopen_dirs)
+    }
+    // TODO
+    // Populate the store with runtime specific data.
+    fn store(
+        &self,
+        vars: Vec<(String, String)>,
+        preopen_dirs: Vec<(String, Dir)>,
+    ) -> Result<Store<Ctx>, Error> {
+        let mut builder = WasiCtxBuilder::new()
+            .inherit_stdin()
+            .inherit_stdout()
+            .inherit_stderr()
+            .envs(&vars)?;
+
+        for (name, dir) in preopen_dirs.into_iter() {
+            builder = builder.preopened_dir(dir, name)?;
+        }
+
+        let mut store = Store::new(&self.engine, Ctx::default());
+
+        store.data_mut().wasi_ctx = Some(builder.build());
+
+        Ok(store)
     }
 
-    fn runtime_from_module(entrypoint_path: String) -> Result<Self, Error> {
+    fn create_runtime(
+        entrypoint_path: String,
+        vars: Vec<(String, String)>,
+        preopen_dirs: Vec<(String, Dir)>,
+    ) -> Result<Self, Error> {
         let start = Instant::now();
 
         let mut config = Config::default();
@@ -97,7 +140,7 @@ impl Runtime {
 
         linker.allow_unknown_exports(true);
         linker.allow_shadowing(true);
-        populate_with_wasi(&mut store, &mut linker, Vec::new(), Vec::new())?;
+        Runtime::populate_with_wasi(&mut store, &mut linker, vars, preopen_dirs)?;
 
         let module = Module::from_file(linker.engine(), entrypoint_path)?;
         let pre = linker.instantiate_pre(&mut store, &module)?;
@@ -108,7 +151,7 @@ impl Runtime {
         Ok(Runtime { pre, engine })
     }
 
-    pub async fn entrypoint_from_bindle(server: &str, reference: &str) -> Result<String, Error> {
+    async fn entrypoint_from_bindle(server: &str, reference: &str) -> Result<String, Error> {
         let start = Instant::now();
 
         let linking_path = PathBuf::from(WACM_CACHE_DIR).join("_linking");
@@ -147,13 +190,14 @@ impl Runtime {
         Ok(entrypoint_path.to_string_lossy().to_string())
     }
 
-    // TODO
-    // Populate the store.
-    fn store(
-        &self,
+    fn populate_with_wasi(
+        store: &mut Store<Ctx>,
+        linker: &mut Linker<Ctx>,
         vars: Vec<(String, String)>,
         preopen_dirs: Vec<(String, Dir)>,
-    ) -> Result<Store<Ctx>, Error> {
+    ) -> Result<(), Error> {
+        wasmtime_wasi::add_to_linker(linker, |host| host.wasi_ctx.as_mut().unwrap())?;
+
         let mut builder = WasiCtxBuilder::new()
             .inherit_stdin()
             .inherit_stdout()
@@ -163,110 +207,62 @@ impl Runtime {
         for (name, dir) in preopen_dirs.into_iter() {
             builder = builder.preopened_dir(dir, name)?;
         }
-
-        let mut store = Store::new(&self.engine, Ctx::default());
-
         store.data_mut().wasi_ctx = Some(builder.build());
 
-        Ok(store)
+        Ok(())
     }
-}
 
-fn populate_with_wasi(
-    store: &mut Store<Ctx>,
-    linker: &mut Linker<Ctx>,
-    vars: Vec<(String, String)>,
-    preopen_dirs: Vec<(String, Dir)>,
-) -> Result<(), Error> {
-    wasmtime_wasi::add_to_linker(linker, |host| host.wasi_ctx.as_mut().unwrap())?;
-
-    let mut builder = WasiCtxBuilder::new()
-        .inherit_stdin()
-        .inherit_stdout()
-        .inherit_stderr()
-        .envs(&vars)?;
-
-    for (name, dir) in preopen_dirs.into_iter() {
-        builder = builder.preopened_dir(dir, name)?;
-    }
-    store.data_mut().wasi_ctx = Some(builder.build());
-
-    Ok(())
-}
-
-fn header_map_to_vec(hm: &http::HeaderMap) -> Result<Vec<String>, Error> {
-    let mut res = Vec::new();
-    for (name, value) in hm
-        .iter()
-        .map(|(name, value)| (name.as_str(), std::str::from_utf8(value.as_bytes())))
-    {
-        let value = value?;
-        anyhow::ensure!(
-            !name
-                .chars()
-                .any(|x| x.is_control() || "(),/:;<=>?@[\\]{}".contains(x)),
-            "Invalid header name"
-        );
-        anyhow::ensure!(
-            !value.chars().any(|x| x.is_control()),
-            "Invalid header value"
-        );
-        res.push(format!("{}:{}", name, value));
-    }
-    Ok(res)
-}
-
-/// Append a header map string to a mutable http::HeaderMap.
-#[allow(unused)]
-fn append_headers(
-    res_headers: &mut http::HeaderMap,
-    source: Option<Vec<String>>,
-) -> Result<(), Error> {
-    match source {
-        Some(h) => {
-            for pair in h {
-                let mut parts = pair.splitn(2, ':');
-                let k = parts
-                    .next()
-                    .ok_or_else(|| anyhow::format_err!("Invalid serialized header: [{}]", pair))?;
-                let v = parts.next().unwrap();
-                res_headers.insert(
-                    http::header::HeaderName::from_str(k)?,
-                    http::header::HeaderValue::from_str(v)?,
-                );
-            }
-
-            Ok(())
+    /// Generate a string vector from an HTTP header map.
+    fn header_map_to_vec(hm: &http::HeaderMap) -> Result<Vec<String>, Error> {
+        let mut res = Vec::new();
+        for (name, value) in hm
+            .iter()
+            .map(|(name, value)| (name.as_str(), std::str::from_utf8(value.as_bytes())))
+        {
+            let value = value?;
+            anyhow::ensure!(
+                !name
+                    .chars()
+                    .any(|x| x.is_control() || "(),/:;<=>?@[\\]{}".contains(x)),
+                "Invalid header name"
+            );
+            anyhow::ensure!(
+                !value.chars().any(|x| x.is_control()),
+                "Invalid header value"
+            );
+            res.push(format!("{}:{}", name, value));
         }
-        None => Ok(()),
+        Ok(res)
+    }
+
+    /// Append a header map string to a mutable http::HeaderMap.
+    fn append_headers(
+        res_headers: &mut http::HeaderMap,
+        source: Option<Vec<String>>,
+    ) -> Result<(), Error> {
+        match source {
+            Some(h) => {
+                for pair in h {
+                    let mut parts = pair.splitn(2, ':');
+                    let k = parts.next().ok_or_else(|| {
+                        anyhow::format_err!("Invalid serialized header: [{}]", pair)
+                    })?;
+                    let v = parts.next().unwrap();
+                    res_headers.insert(
+                        http::header::HeaderName::from_str(k)?,
+                        http::header::HeaderValue::from_str(v)?,
+                    );
+                }
+
+                Ok(())
+            }
+            None => Ok(()),
+        }
     }
 }
 
 #[derive(Default)]
 pub struct Ctx {
     pub wasi_ctx: Option<WasiCtx>,
-    pub runtime_data: Option<GlassRuntimeData>,
-}
-
-#[cfg(test)]
-mod tests {
-    use hyper::body;
-
-    use crate::Runtime;
-
-    #[tokio::test]
-    async fn test_start_runtime() {
-        env_logger::init();
-        let request = http::Request::builder()
-            .method("GET")
-            .uri("https://www.rust-lang.org/")
-            .header("X-Custom-Foo", "Bar")
-            .header("ana-are-mere", "marcel-pavel")
-            .body(body::Body::empty())
-            .unwrap();
-        let r = Runtime::new("http://localhost:8000/v1", "components-test/0.15.0")
-            .await
-            .unwrap();
-        r.execute(request).await.unwrap();
-    }
+    pub runtime_data: Option<DeislabsHttpV01Data>,
 }

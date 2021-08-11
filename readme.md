@@ -10,7 +10,7 @@ download the missing components of the WASI component, link it locally, then
 pre-instantiate a WebAssembly module:
 
 ```
-➜ glass --server <WASI component registry> --reference rust-service/0.1.0
+➜ glass http --server <WASI component registry> --reference rust-service/0.1.0
 [2021-08-09T06:06:39Z INFO  glass_runtime::ctx] Downloaded bindle in: 38.7931ms
 [2021-08-09T06:06:39Z INFO  wacm_bindle::utils] Setting interface glass_runtime.witx as main interface for glass_runtime from bindle rust-service/0.1.0
 [2021-08-09T06:06:39Z INFO  wacm_bindle::utils] Pushing library rust-service.wasm in the list for bindle rust-service/0.10.0
@@ -60,15 +60,18 @@ used for writing handlers. Currently, the list contains Rust, C, and C++.
 Complete example in Rust:
 
 ```rust
-wacm::export!("glass_runtime");
+wacm::export!("deislabs_http_v01");
 
-struct GlassRuntime {}
+struct DeislabsHttpV01 {}
 
-impl glass_runtime::GlassRuntime for GlassRuntime {
-    fn handler(req: glass_runtime::Request) -> glass_runtime::Response {
-        println!("request: {:?}, {:?}, {:?}", req.0, req.1, req.2);
-
-        (200, None, None)
+impl deislabs_http_v01::DeislabsHttpV01 for DeislabsHttpV01 {
+    fn handler(req: Request) -> Response {
+        let (method, uri, headers, _, _) = req;
+        println!(
+            "method: {:?}\nuri: {:?}\nheaders: {:?}",
+            method, uri, headers
+        );
+        todo!()
     }
 }
 ```
@@ -79,17 +82,16 @@ can then be pulled by the runtime.
 Example for C++:
 
 ```cpp
-#include <glass_runtime.h>
 #include <stdio.h>
+#include "deislabs_http_v01.h"
 
-void glass_runtime_handler(
-    glass_runtime_request_t *req,
-    glass_runtime_http_status_t *status,
-    glass_runtime_option_headers_t *headers,
-    glass_runtime_option_body_t *body
-)
+void deislabs_http_v01_handler(
+    deislabs_http_v01_request_t *req,
+    deislabs_http_v01_http_status_t *status,
+    deislabs_http_v01_option_headers_t *headers,
+    deislabs_http_v01_option_body_t *body)
 {
-    *status = 200;
+    *status = 418;
 }
 ```
 

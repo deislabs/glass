@@ -1,10 +1,11 @@
 [package]
-name = "glass-runtime"
+name = "glass-runtime-http"
 version = "0.1.0"
 edition = "2018"
 
 [dependencies]
 anyhow = "1.0"
+async-trait = "0.1"
 bytes = "1"
 wasmtime = "0.28"
 wasmtime-wasi = "0.28"
@@ -23,5 +24,3 @@ witx-bindgen-wasmtime = { git = "https://github.com/bytecodealliance/witx-bindge
 http = "0.2"
 wacm-bindle = { git = "https://github.com/deislabs/wacm", rev = "12e640ca0233fe273bfa6cb8b3574aeb02e9970a" }
 hyper = {version = "0.14", features = ["full"]}
-
-# [workspace]

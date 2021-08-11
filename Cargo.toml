@@ -7,15 +7,16 @@ edition = "2018"
 anyhow = "1.0"
 bytes = "1"
 futures = "0.3"
-glass-runtime = { path = "crates/runtime" }
+glass-runtime-http = { path = "crates/http" }
 env_logger = "0.8"
 log = { version = "0.4", default-features = false }
 hyper = {version = "0.14", features = ["full"]}
 serde = { version = "1.0", features = ["derive"] }
 structopt = "0.3.21"
 tokio = { version = "1.1", features = ["full"] }
+wasi-cap-std-sync = "0.28"
 
 [workspace]
 members = [
-    "crates/runtime",
+    "crates/http"
 ]
