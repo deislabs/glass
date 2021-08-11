@@ -1,7 +1,7 @@
 use std::process::{self, Command};
 
-const WITX_BINDGEN_REV: &str = "9970a1c584bd1d27ff121f0c9a94373cef2e75cb";
-const WITX_BINDGEN_REPO: &str = "https://github.com/bytecodealliance/witx-bindgen";
+const WITX_BINDGEN_BRANCH: &str = "wasmtime-pub-mod";
+const WITX_BINDGEN_REPO: &str = "https://github.com/radu-matei/witx-bindgen";
 const WITX_BINDGEN_CLI_CRATE: &str = "witx-bindgen-cli";
 
 const WITX_SOURCE: &str = "deislabs_http_v01.witx";
@@ -85,8 +85,8 @@ fn check_witx_bindgen() {
                     "install",
                     "--git",
                     WITX_BINDGEN_REPO,
-                    "--rev",
-                    WITX_BINDGEN_REV,
+                    "--branch",
+                    WITX_BINDGEN_BRANCH,
                     WITX_BINDGEN_CLI_CRATE,
                 ],
                 None,
