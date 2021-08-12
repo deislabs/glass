@@ -1,9 +1,9 @@
 #ifndef __BINDINGS_DEISLABS_HTTP_V01_H
+#define __BINDINGS_DEISLABS_HTTP_V01_H
 #ifdef __cplusplus
 extern "C"
 {
   #endif
-  #define __BINDINGS_DEISLABS_HTTP_V01_H
   
   #include <stdint.h>
   #include <stdbool.h>

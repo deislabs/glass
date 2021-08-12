@@ -55,8 +55,6 @@ void deislabs_http_v01_handler(
     deislabs_http_v01_option_headers_t *headers,
     deislabs_http_v01_option_body_t *body)
 {
-    __wasilibc_initialize_environ();
-
     if (!INITIALIZED)
     {
         store_code_in_global();
