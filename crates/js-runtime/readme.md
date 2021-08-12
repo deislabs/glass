@@ -4,7 +4,7 @@ This project is using
 [the SpiderMonkey JavScript engine compiled to WebAssembly](https://github.com/tschneidereit/spidermonkey-wasi-embedding)
 in order to execute JavaScript scripts on WASI runtimes.
 
-The goal is to use the HTTP and other Glass riggers from the parent repository
+The goal is to use the HTTP and other Glass triggers from the parent repository
 and write handlers for them in JavaScript.
 
 ### Building

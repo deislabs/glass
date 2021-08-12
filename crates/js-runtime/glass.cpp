@@ -13,11 +13,9 @@
 
 #include <builtins.h>
 #include <spidermonkey.h>
-#include <wagijs.h>
-// #include <wasi/libc-environ.h>
-// #include <wizer.h>
+#include <glass.h>
 
-namespace WagiJS
+namespace Glass
 {
     JS::PersistentRootedObject uhrp;
 

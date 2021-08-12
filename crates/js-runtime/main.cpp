@@ -4,11 +4,11 @@
 #include <fstream>
 
 #include <wizer.h>
-#include <wagijs.h>
+#include <glass.h>
 
 #include <deislabs_http_v01.h>
 
-WagiJS::Runtime *runtime = nullptr;
+Glass::Runtime *runtime = nullptr;
 JSContext *global_context;
 static constexpr char DEFAULT_ENTRYPOINT_FILE[] = "index.js";
 bool INITIALIZED = false;
@@ -32,7 +32,7 @@ void init()
     JS_Init();
     global_context = JS_NewContext(JS::DefaultHeapMaxBytes);
 
-    WagiJS::Runtime r = WagiJS::Runtime();
+    Glass::Runtime r = Glass::Runtime();
 
     if (!r.init_context(global_context))
         printf("init failed");
@@ -64,7 +64,7 @@ void deislabs_http_v01_handler(
     JS_Init();
     global_context = JS_NewContext(JS::DefaultHeapMaxBytes);
 
-    WagiJS::Runtime r = WagiJS::Runtime();
+    Glass::Runtime r = Glass::Runtime();
 
     if (!r.init_context(global_context))
         printf("init failed");

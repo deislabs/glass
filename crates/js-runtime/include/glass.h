@@ -11,10 +11,8 @@
 #include <js/TypeDecls.h>
 
 #include <spidermonkey.h>
-// #include <wasi/libc-environ.h>
-// #include <wizer.h>
 
-namespace WagiJS
+namespace Glass
 {
     static JSClass global_class = {
         "global",
