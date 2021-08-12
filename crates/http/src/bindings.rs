@@ -130,8 +130,8 @@ pub mod deislabs_http_v01 {
       })
     }
     pub fn handler(&self, mut caller: impl wasmtime::AsContextMut<Data = T>,req: Request<'_,>,)-> Result<Response, wasmtime::Trap> {
-      let func_canonical_abi_free = &self.canonical_abi_free;
       let func_canonical_abi_realloc = &self.canonical_abi_realloc;
+      let func_canonical_abi_free = &self.canonical_abi_free;
       let memory = &self.memory;
       let (t0_0, t0_1, t0_2, t0_3, t0_4, ) = req;
       let vec1 = t0_1;

@@ -1,6 +1,6 @@
 use std::process::{self, Command};
 
-const WITX_BINDGEN_BRANCH: &str = "wasmtime-pub-mod";
+const WITX_BINDGEN_BRANCH: &str = "c-gen-cpp-headers";
 const WITX_BINDGEN_REPO: &str = "https://github.com/radu-matei/witx-bindgen";
 const WITX_BINDGEN_CLI_CRATE: &str = "witx-bindgen-cli";
 

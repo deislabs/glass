@@ -1,4 +1,3 @@
-#include <glass_runtime.h>
 #include <stdio.h>
 
 #include <cassert>
@@ -6,6 +5,8 @@
 
 #include <wizer.h>
 #include <wagijs.h>
+
+#include <deislabs_http_v01.h>
 
 WagiJS::Runtime *runtime = nullptr;
 JSContext *global_context;
@@ -48,12 +49,13 @@ void init()
     INITIALIZED = true;
 }
 
-void glass_runtime_handler(glass_runtime_request_t *req, glass_runtime_http_status_t *ret0, glass_runtime_option_headers_t *ret1, glass_runtime_option_body_t *ret2)
+void deislabs_http_v01_handler(
+    deislabs_http_v01_request_t *req,
+    deislabs_http_v01_http_status_t *status,
+    deislabs_http_v01_option_headers_t *headers,
+    deislabs_http_v01_option_body_t *body)
 {
-
-    // __wasilibc_initialize_environ();
-
-    printf("Handling request... in JS runtime...\n");
+    __wasilibc_initialize_environ();
 
     if (!INITIALIZED)
     {
@@ -97,7 +99,7 @@ void glass_runtime_handler(glass_runtime_request_t *req, glass_runtime_http_stat
         runtime->process_pending_jobs(global_context);
     } while (js::HasJobsPending(global_context));
 
-    *ret0 = 404;
+    *status = 404;
 }
 
 WIZER_INIT(store_code_in_global);
