@@ -7,6 +7,10 @@
 
 #include <deislabs_http_v01.h>
 
+#include <js/Array.h>
+#include <js/ArrayBuffer.h>
+#include <js/ArrayBufferMaybeShared.h>
+
 Glass::Runtime *runtime = nullptr;
 JSContext *global_context;
 static constexpr char DEFAULT_ENTRYPOINT_FILE[] = "index.js";
@@ -75,20 +79,15 @@ void deislabs_http_v01_handler(
     if (!runtime->compile(global_context))
         runtime->abort(global_context, "evaluating JS");
 
-    JS::RootedValue result(global_context);
-    if (!JS_CallFunctionName(global_context, runtime->global, "main", JS::HandleValueArray::empty(), &result))
-    {
-        printf("cannot call entrypoint");
-    }
+    auto result = JS::RootedValue(global_context);
+    auto arg = JS::RootedValue(global_context);
+    auto abuf = JS::NewArrayBufferWithContents(global_context, req->f4.val.len, req->f4.val.ptr);
+    arg.setObject(*abuf);
+    auto argsv = JS::HandleValueArray(arg);
 
-    JS::RootedValue result2(global_context);
-    JS::RootedValue val(global_context);
-    val.setNumber(46);
-    JS::HandleValueArray argsv = JS::HandleValueArray(val);
-
-    if (!JS_CallFunctionName(global_context, runtime->global, "test", argsv, &result2))
+    if (!JS_CallFunctionName(global_context, runtime->global, "handler", argsv, &result))
     {
-        printf("cannot call entrypoint");
+        printf("cannot call handler");
     }
 
     do
@@ -98,6 +97,23 @@ void deislabs_http_v01_handler(
 
     *status = 404;
 }
+
+void test()
+{
+    auto x = JS::NewArrayBuffer(global_context, 0);
+}
+
+// static JSBool my_array_dump(JSContext *cx, uintN argc, jsval *vp)
+// {
+//     JSObject *obj;
+//     JS_ValueToObject(cx, vp[0 + 2], &obj);
+//     js::ArrayBuffer *A;
+//     A = js::ArrayBuffer::fromJSObject(obj);
+//     int *B = (int *)A->data;
+//     for (int i = 0; i < A->byteLength / 4; i++)
+//         printf("%i ", B[i]);
+//     return JS_TRUE;
+// }
 
 WIZER_INIT(store_code_in_global);
 
