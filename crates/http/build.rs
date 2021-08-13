@@ -1,7 +1,7 @@
 use std::process::{self, Command};
 
-const WITX_BINDGEN_BRANCH: &str = "wasmtime-pub-mod";
-const WITX_BINDGEN_REPO: &str = "https://github.com/radu-matei/witx-bindgen";
+const WITX_BINDGEN_REV: &str = "f16233e3907d080bad595b42b7b4a083098861d5";
+const WITX_BINDGEN_REPO: &str = "https://github.com/bytecodealliance/witx-bindgen";
 const WITX_BINDGEN_CLI_CRATE: &str = "witx-bindgen-cli";
 
 const WITX_SOURCE: &str = "deislabs_http_v01.witx";
@@ -75,18 +75,18 @@ fn generate_bindings() {
 fn check_witx_bindgen() {
     match process::Command::new("witx-bindgen").spawn() {
         Ok(_) => {
-            eprintln!("witx-codegen already installed");
+            eprintln!("witx-bindgen already installed");
         }
         Err(_) => {
-            println!("cannot find witx-codegen, attempting to install");
+            println!("cannot find witx-bindgen, attempting to install");
             run(
                 vec![
                     "cargo",
                     "install",
                     "--git",
                     WITX_BINDGEN_REPO,
-                    "--branch",
-                    WITX_BINDGEN_BRANCH,
+                    "--rev",
+                    WITX_BINDGEN_REV,
                     WITX_BINDGEN_CLI_CRATE,
                 ],
                 None,

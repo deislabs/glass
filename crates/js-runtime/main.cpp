@@ -1,13 +1,17 @@
-#include <glass_runtime.h>
 #include <stdio.h>
-
 #include <cassert>
 #include <fstream>
 
 #include <wizer.h>
-#include <wagijs.h>
+#include <glass.h>
 
-WagiJS::Runtime *runtime = nullptr;
+#include <deislabs_http_v01.h>
+
+#include <js/Array.h>
+#include <js/ArrayBuffer.h>
+#include <js/ArrayBufferMaybeShared.h>
+
+Glass::Runtime *runtime = nullptr;
 JSContext *global_context;
 static constexpr char DEFAULT_ENTRYPOINT_FILE[] = "index.js";
 bool INITIALIZED = false;
@@ -31,7 +35,7 @@ void init()
     JS_Init();
     global_context = JS_NewContext(JS::DefaultHeapMaxBytes);
 
-    WagiJS::Runtime r = WagiJS::Runtime();
+    Glass::Runtime r = Glass::Runtime();
 
     if (!r.init_context(global_context))
         printf("init failed");
@@ -48,13 +52,12 @@ void init()
     INITIALIZED = true;
 }
 
-void glass_runtime_handler(glass_runtime_request_t *req, glass_runtime_http_status_t *ret0, glass_runtime_option_headers_t *ret1, glass_runtime_option_body_t *ret2)
+void deislabs_http_v01_handler(
+    deislabs_http_v01_request_t *req,
+    deislabs_http_v01_http_status_t *status,
+    deislabs_http_v01_option_headers_t *headers,
+    deislabs_http_v01_option_body_t *body)
 {
-
-    // __wasilibc_initialize_environ();
-
-    printf("Handling request... in JS runtime...\n");
-
     if (!INITIALIZED)
     {
         store_code_in_global();
@@ -64,7 +67,7 @@ void glass_runtime_handler(glass_runtime_request_t *req, glass_runtime_http_stat
     JS_Init();
     global_context = JS_NewContext(JS::DefaultHeapMaxBytes);
 
-    WagiJS::Runtime r = WagiJS::Runtime();
+    Glass::Runtime r = Glass::Runtime();
 
     if (!r.init_context(global_context))
         printf("init failed");
@@ -76,20 +79,47 @@ void glass_runtime_handler(glass_runtime_request_t *req, glass_runtime_http_stat
     if (!runtime->compile(global_context))
         runtime->abort(global_context, "evaluating JS");
 
-    JS::RootedValue result(global_context);
-    if (!JS_CallFunctionName(global_context, runtime->global, "main", JS::HandleValueArray::empty(), &result))
+    auto result = JS::RootedValue(global_context);
+
+    auto js_body = JS::RootedValue(global_context);
+    js_body.setObjectOrNull(JS::NewArrayBufferWithContents(global_context, req->f4.val.len, req->f4.val.ptr));
+
+    auto js_method = JS::RootedValue(global_context);
+    switch (req->f0)
     {
-        printf("cannot call entrypoint");
+
+    case DEISLABS_HTTP_V01_METHOD_GET:
+        js_method.setString(JS::RootedString(global_context, JS_NewStringCopyZ(global_context, "GET")));
+        break;
+
+    case DEISLABS_HTTP_V01_METHOD_POST:
+        js_method.setString(JS::RootedString(global_context, JS_NewStringCopyZ(global_context, "POST")));
+        break;
+
+    case DEISLABS_HTTP_V01_METHOD_DELETE:
+        js_method.setString(JS::RootedString(global_context, JS_NewStringCopyZ(global_context, "DELETE")));
+        break;
+
+    case DEISLABS_HTTP_V01_METHOD_PATCH:
+        js_method.setString(JS::RootedString(global_context, JS_NewStringCopyZ(global_context, "PATCH")));
+        break;
     }
 
-    JS::RootedValue result2(global_context);
-    JS::RootedValue val(global_context);
-    val.setNumber(46);
-    JS::HandleValueArray argsv = JS::HandleValueArray(val);
+    JS::RootedObject req_obj(global_context, JS_NewPlainObject(global_context));
+    JS::RootedObject res_obj(global_context, JS_NewPlainObject(global_context));
 
-    if (!JS_CallFunctionName(global_context, runtime->global, "test", argsv, &result2))
+    // TODO
+    // Define property and insert headers in a JS map.
+    JS_SetProperty(global_context, req_obj, "body", js_body);
+    JS_SetProperty(global_context, req_obj, "method", js_method);
+
+    JS::RootedValueArray<2> args(global_context);
+    args[0].setObject(*req_obj);
+    args[1].setObject(*res_obj);
+
+    if (!JS_CallFunctionName(global_context, runtime->global, "handler", args, &result))
     {
-        printf("cannot call entrypoint");
+        printf("cannot call handler");
     }
 
     do
@@ -97,7 +127,19 @@ void glass_runtime_handler(glass_runtime_request_t *req, glass_runtime_http_stat
         runtime->process_pending_jobs(global_context);
     } while (js::HasJobsPending(global_context));
 
-    *ret0 = 404;
+    JS::RootedValue rs(global_context);
+    rs.setObject(*res_obj);
+
+    JS::RootedValue res_status(global_context);
+    JS_GetProperty(global_context, res_obj, "status", &res_status);
+    *status = (uint16_t)res_status.toInt32();
+
+    // TODO
+    // Check if res.body is present, and try to read its value, in order,
+    // as ArrayBuffer, Uint8Array, then string.
+    JS::RootedValue res_body(global_context);
+    if (!JS_GetProperty(global_context, res_obj, "body", &res_body))
+        printf("cannot get response body");
 }
 
 WIZER_INIT(store_code_in_global);
