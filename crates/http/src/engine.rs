@@ -1,54 +1,40 @@
-use crate::{
-    bindings::deislabs_http_v01::{DeislabsHttpV01, DeislabsHttpV01Data, Method},
-    listener,
-};
+use crate::trigger::HttpEngine;
 use anyhow::Error;
 use async_trait::async_trait;
-use glass_runtime_context::RegistryHelper;
-use hyper::Body;
+use deislabs_http_v01::{DeislabsHttpV01, DeislabsHttpV01Data, Method};
+use hyper::{Body, Request, Response};
 use std::{str::FromStr, sync::Arc, time::Instant};
-use wasmtime::{Engine, Instance, InstancePre, Module, Store};
+use wasmtime::{Instance, Store};
 
-type Context = glass_runtime_context::Context<DeislabsHttpV01Data>;
+witx_bindgen_wasmtime::export!("crates/http/deislabs_http_v01.witx");
 
-const HTTP_INTERFACE: &str = "deislabs_http_v01";
+type InnerEngine = glass_engine::InnerEngine<DeislabsHttpV01Data>;
+type InnerContext = glass_engine::Context<DeislabsHttpV01Data>;
 
 #[derive(Clone)]
-pub struct Runtime {
-    entrypoint_path: String,
-    vars: Vec<(String, String)>,
-    preopen_dirs: Vec<(String, String)>,
-    allowed_http_hosts: Option<Vec<String>>,
-
-    pre: Arc<InstancePre<Context>>,
-    engine: Engine,
-}
+pub struct Engine(pub Arc<InnerEngine>);
 
 #[async_trait]
-impl listener::HttpRuntime for Runtime {
-    async fn execute(&self, req: hyper::Request<Body>) -> Result<hyper::Response<Body>, Error> {
+impl HttpEngine for Engine {
+    async fn execute(
+        &self,
+        req: hyper::Request<hyper::Body>,
+    ) -> Result<hyper::Response<hyper::Body>, Error> {
         let start = Instant::now();
-
-        let vars = &self.vars;
-        let preopen_dirs = &self.preopen_dirs;
-        let mut store =
-            Context::store_with_data(&self.engine, None, vars.clone(), preopen_dirs.clone())?;
-        let instance = self.pre.instantiate(&mut store)?;
-
+        let (store, instance) = self.0.prepare_exec(None)?;
         let res = self.execute_impl(store, instance, req).await?;
-
         log::info!("Total request execution time: {:#?}", start.elapsed());
-
         Ok(res)
     }
 }
-impl Runtime {
+
+impl Engine {
     async fn execute_impl(
         &self,
-        mut store: Store<Context>,
+        mut store: Store<InnerContext>,
         instance: Instance,
-        req: hyper::Request<Body>,
-    ) -> Result<hyper::Response<Body>, Error> {
+        req: Request<Body>,
+    ) -> Result<Response<Body>, Error> {
         let r = DeislabsHttpV01::new(&mut store, &instance, |host| {
             host.runtime_data.as_mut().unwrap()
         })?;
@@ -63,7 +49,7 @@ impl Runtime {
         };
         let u = req.uri().to_string();
 
-        let headers = Runtime::header_map_to_vec(req.headers())?;
+        let headers = Self::header_map_to_vec(req.headers())?;
         let headers: Vec<&str> = headers.iter().map(|s| &**s).collect();
 
         let (_, b) = req.into_parts();
@@ -73,7 +59,7 @@ impl Runtime {
         let (status, headers, body) = r.handler(&mut store, req)?;
         log::info!("Result status code: {}", status);
         let mut hr = http::Response::builder().status(status);
-        Runtime::append_headers(hr.headers_mut().unwrap(), headers)?;
+        Self::append_headers(hr.headers_mut().unwrap(), headers)?;
 
         let body = match body {
             Some(b) => Body::from(b),
@@ -81,58 +67,6 @@ impl Runtime {
         };
 
         Ok(hr.body(body)?)
-    }
-
-    pub async fn new(
-        server: &str,
-        reference: &str,
-        vars: Vec<(String, String)>,
-        preopen_dirs: Vec<(String, String)>,
-        allowed_http_hosts: Option<Vec<String>>,
-    ) -> Result<Self, Error> {
-        let entrypoint_path =
-            RegistryHelper::entrypoint_from_bindle(&server, &reference, HTTP_INTERFACE).await?;
-
-        Self::create_runtime_context(entrypoint_path, vars, preopen_dirs, allowed_http_hosts)
-    }
-
-    pub fn new_from_local(
-        entrypoint_path: String,
-        vars: Vec<(String, String)>,
-        preopen_dirs: Vec<(String, String)>,
-        allowed_http_hosts: Option<Vec<String>>,
-    ) -> Result<Self, Error> {
-        Self::create_runtime_context(entrypoint_path, vars, preopen_dirs, allowed_http_hosts)
-    }
-
-    fn create_runtime_context(
-        entrypoint_path: String,
-        vars: Vec<(String, String)>,
-        preopen_dirs: Vec<(String, String)>,
-        allowed_http_hosts: Option<Vec<String>>,
-    ) -> Result<Self, Error> {
-        let start = Instant::now();
-
-        let ctx = Context::default();
-        let (engine, mut store, linker) = ctx.get_engine_store_linker(
-            vars.clone(),
-            preopen_dirs.clone(),
-            allowed_http_hosts.clone(),
-        )?;
-
-        let module = Module::from_file(linker.engine(), entrypoint_path.clone())?;
-        let pre = Arc::new(linker.instantiate_pre(&mut store, &module)?);
-
-        log::info!("Created runtime from module in: {:#?}", start.elapsed());
-
-        Ok(Runtime {
-            entrypoint_path,
-            vars,
-            preopen_dirs,
-            allowed_http_hosts,
-            pre,
-            engine,
-        })
     }
 
     /// Generate a string vector from an HTTP header map.

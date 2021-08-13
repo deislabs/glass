@@ -7,6 +7,6 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-witx-bindgen-rust = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "9970a1c584bd1d27ff121f0c9a94373cef2e75cb"}
+witx-bindgen-rust = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "f16233e3907d080bad595b42b7b4a083098861d5"}
 
 [workspace]

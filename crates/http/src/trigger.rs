@@ -8,16 +8,16 @@ use hyper::{
 use std::net::SocketAddr;
 
 #[async_trait]
-pub trait HttpRuntime: Clone + Send + Sync + 'static {
+pub trait HttpEngine: Clone + Send + Sync + 'static {
     async fn execute(&self, req: Request<Body>) -> Result<Response<Body>, Error>;
 }
 
-pub struct Listener {
+pub struct Trigger {
     pub address: String,
 }
 
-impl Listener {
-    pub async fn run(&self, runtime: impl HttpRuntime) -> Result<(), Error> {
+impl Trigger {
+    pub async fn run(&self, runtime: impl HttpEngine) -> Result<(), Error> {
         let mk_svc = make_service_fn(move |_: &AddrStream| {
             let r = runtime.clone();
             async move {

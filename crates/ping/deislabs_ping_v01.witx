@@ -1,0 +1,1 @@
+ping: function(req: string) -> string

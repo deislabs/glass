@@ -7,7 +7,9 @@ edition = "2018"
 anyhow = "1.0"
 bytes = "1"
 futures = "0.3"
-glass-runtime-http = { path = "crates/http" }
+glass-engine = { path = "crates/engine" }
+glass-http = { path = "crates/http" }
+glass-ping = { path = "crates/ping" }
 env_logger = "0.8"
 log = { version = "0.4", default-features = false }
 hyper = {version = "0.14", features = ["full"]}
@@ -16,10 +18,15 @@ structopt = "0.3.21"
 tokio = { version = "1.1", features = ["full"] }
 wasi-cap-std-sync = "0.28"
 
+[build-dependencies]
+glass-build = { path = "crates/build" }
+
 [workspace]
 members = [
+    "crates/build",
+    "crates/engine",
     "crates/http",
-    "crates/context"
+    "crates/ping",
 ]
 
 # TODO
