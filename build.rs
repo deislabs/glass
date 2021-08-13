@@ -37,7 +37,7 @@ fn build_ping_tests() {
         "c",
         "--export",
         format!("{}/c", PING_TESTS_DIR).as_str(),
-        HTTP_WITX,
+        PING_WITX,
     )
     .unwrap();
     clang_build_example(PING_TESTS_DIR, "c").unwrap();
