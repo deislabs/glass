@@ -1,8 +1,7 @@
-use std::{sync::Arc, time::Instant};
-
 use anyhow::Error;
 use async_trait::async_trait;
 use deislabs_ping_v01::{DeislabsPingV01, DeislabsPingV01Data};
+use std::{sync::Arc, time::Instant};
 
 witx_bindgen_wasmtime::export!("crates/ping/deislabs_ping_v01.witx");
 
@@ -49,7 +48,7 @@ impl PingEngineTrait for PingEngine {
 
         let res = pr.ping(&mut store, input.as_str())?;
 
-        log::info!("Total request execution time: {:?}", start.elapsed());
+        log::info!("Total execution time: {:?}", start.elapsed());
         Ok(res)
     }
 }

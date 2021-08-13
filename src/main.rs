@@ -1,5 +1,5 @@
 use anyhow::{bail, Error};
-use glass_cli::{HttpCmd, PingCmd};
+use glass::{HttpCmd, PingCmd};
 use structopt::{clap::AppSettings, StructOpt};
 
 #[tokio::main]
