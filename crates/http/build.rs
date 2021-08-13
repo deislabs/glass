@@ -5,8 +5,6 @@ const WITX_BINDGEN_REPO: &str = "https://github.com/bytecodealliance/witx-bindge
 const WITX_BINDGEN_CLI_CRATE: &str = "witx-bindgen-cli";
 
 const WITX_SOURCE: &str = "deislabs_http_v01.witx";
-const WITX_BINDINGS_DESTINATION_DIR: &str = "src";
-const WITX_BINDINGS_DESTINATION_FILE: &str = "bindings.rs";
 
 const TESTS_DIR: &str = "tests";
 const RUST_SIMPLE_TEST: &str = "rust";
@@ -14,10 +12,6 @@ const C_TEST: &str = "c";
 
 fn main() {
     println!("cargo:rerun-if-changed={}", WITX_SOURCE);
-    println!(
-        "cargo:rerun-if-changed={}/{}",
-        WITX_SOURCE, WITX_BINDINGS_DESTINATION_FILE
-    );
     println!(
         "cargo:rerun-if-changed={}/{}/lib.rs",
         TESTS_DIR, RUST_SIMPLE_TEST
@@ -46,19 +40,6 @@ fn clang_build_example(dir: &str, example: &str) {
 
 fn generate_bindings() {
     check_witx_bindgen();
-
-    run(
-        vec![
-            "witx-bindgen",
-            "wasmtime",
-            "--export",
-            "--out-dir",
-            WITX_BINDINGS_DESTINATION_DIR,
-            WITX_SOURCE,
-        ],
-        None,
-    );
-
     run(
         vec![
             "witx-bindgen",

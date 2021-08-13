@@ -1,5 +1,5 @@
 [package]
-name = "glass"
+name = "glass-cli"
 version = "0.1.0"
 edition = "2018"
 
@@ -7,7 +7,8 @@ edition = "2018"
 anyhow = "1.0"
 bytes = "1"
 futures = "0.3"
-glass-runtime-http = { path = "crates/http" }
+glass-engine = { path = "crates/engine" }
+glass-http = { path = "crates/http" }
 env_logger = "0.8"
 log = { version = "0.4", default-features = false }
 hyper = {version = "0.14", features = ["full"]}
@@ -18,8 +19,8 @@ wasi-cap-std-sync = "0.28"
 
 [workspace]
 members = [
+    "crates/engine",
     "crates/http",
-    "crates/context"
 ]
 
 # TODO

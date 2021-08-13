@@ -1,17 +1,17 @@
 [package]
-name = "glass-runtime-http"
+name = "glass-http"
 version = "0.1.0"
 edition = "2018"
 
 [dependencies]
 anyhow = "1.0"
 async-trait = "0.1"
-bytes = "1"
 http = "0.2"
-env_logger = "0.8"
-glass-runtime-context = { path = "../context" }
+glass-engine = { path = "../engine" }
 hyper = {version = "0.14", features = ["full"]}
 log = { version = "0.4", default-features = false }
 tokio = "1.5.0"
-wasmtime = "0.28"
-witx-bindgen-wasmtime = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "0e087ecc73dd4b74ff48ff28302dd410b10d8e3c"}
+witx-bindgen-wasmtime = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "f16233e3907d080bad595b42b7b4a083098861d5"}
+
+[lib]
+doctest = false

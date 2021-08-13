@@ -1,5 +1,5 @@
 use anyhow::{bail, Error};
-use glass_runtime_http::{listener::Listener, runtime::Runtime};
+use glass_cli::HttpCmd;
 use structopt::{clap::AppSettings, StructOpt};
 
 #[tokio::main]
@@ -96,48 +96,6 @@ pub struct Opt {
 #[derive(StructOpt, Debug)]
 pub enum SubCommand {
     Http(HttpCmd),
-}
-
-#[derive(StructOpt, Debug)]
-#[structopt(
-    about = "Start the default HTTP listener",
-    global_settings = &[AppSettings::ColoredHelp, AppSettings::ArgRequiredElseHelp]
-)]
-pub struct HttpCmd {
-    #[structopt(
-        long = "listen",
-        default_value = "127.0.0.1:3000",
-        help = "IP address and port to listen on"
-    )]
-    pub address: String,
-}
-
-impl HttpCmd {
-    async fn run(
-        &self,
-        server: String,
-        reference: Option<String>,
-        local: Option<String>,
-        vars: Vec<(String, String)>,
-        preopen_dirs: Vec<(String, String)>,
-        allowed_http_hosts: Option<Vec<String>>,
-    ) -> Result<(), Error> {
-        let runtime = match reference {
-            Some(r) => Runtime::new(&server, &r, vars, preopen_dirs, allowed_http_hosts).await?,
-            None => {
-                match local {
-                    Some(l) => Runtime::new_from_local(l, vars, preopen_dirs, allowed_http_hosts)?,
-                    None => panic!("either a remote registry reference or local file must be passed to start the server")
-                }
-            }
-        };
-
-        let listener = Listener {
-            address: self.address.clone(),
-        };
-
-        listener.run(runtime).await
-    }
 }
 
 fn parse_env_var(s: &str) -> Result<(String, String), Error> {

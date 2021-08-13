@@ -1,5 +1,7 @@
-use glass_runtime_http::{listener::HttpRuntime, runtime::Runtime};
+use glass_engine::InnerEngine;
+use glass_http::{Engine, HttpEngine};
 use hyper::body;
+use std::sync::Arc;
 
 const SIMPLE_RUST_MODULE: &str = "tests/rust/target/wasm32-wasi/release/simple_rust.wasm";
 const SIMPLE_C_MODULE: &str = "tests/c/ctest.wasm";
@@ -31,8 +33,11 @@ async fn test_example(entrypoint: &str, exp_status: u16, exp_body: Vec<u8>) {
         .header("X-Custom-Foo2", "Bar2")
         .body(body::Body::empty())
         .unwrap();
-    let r = Runtime::new_from_local(entrypoint.to_string(), Vec::new(), Vec::new(), None).unwrap();
-    let res = r.execute(req).await.unwrap();
+    let ie = Arc::new(
+        InnerEngine::new_from_local(entrypoint.to_string(), Vec::new(), Vec::new(), None).unwrap(),
+    );
+    let e = Engine(ie);
+    let res = e.execute(req).await.unwrap();
 
     println!("response status: {:?}", res.status());
     assert_eq!(exp_status, res.status());
