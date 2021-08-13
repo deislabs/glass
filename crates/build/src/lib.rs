@@ -1,62 +1,51 @@
-use std::process::{self, Command};
+use anyhow::Error;
+use std::ffi::OsStr;
+use std::process::{self, Command, Output};
 
 const WITX_BINDGEN_REV: &str = "f16233e3907d080bad595b42b7b4a083098861d5";
 const WITX_BINDGEN_REPO: &str = "https://github.com/bytecodealliance/witx-bindgen";
 const WITX_BINDGEN_CLI_CRATE: &str = "witx-bindgen-cli";
 
-const WITX_SOURCE: &str = "deislabs_http_v01.witx";
-
-const TESTS_DIR: &str = "tests";
-const RUST_SIMPLE_TEST: &str = "rust";
-const C_TEST: &str = "c";
-
-fn main() {
-    println!("cargo:rerun-if-changed={}", WITX_SOURCE);
-    println!(
-        "cargo:rerun-if-changed={}/{}/lib.rs",
-        TESTS_DIR, RUST_SIMPLE_TEST
-    );
-    println!("cargo:rerun-if-changed={}/{}/lib.c", TESTS_DIR, C_TEST);
-
-    generate_bindings();
-    cargo_build_example(TESTS_DIR, RUST_SIMPLE_TEST);
-    clang_build_example(TESTS_DIR, C_TEST);
-}
-
-fn cargo_build_example(dir: &str, example: &str) {
+pub fn cargo_build_example(dir: &str, example: &str) -> Result<Output, Error> {
     let dir = format!("{}/{}", dir, example);
 
     run(
         vec!["cargo", "build", "--target", "wasm32-wasi", "--release"],
         Some(dir),
-    );
+    )
 }
 
-fn clang_build_example(dir: &str, example: &str) {
+pub fn clang_build_example(dir: &str, example: &str) -> Result<Output, Error> {
     let dir = format!("{}/{}", dir, example);
 
-    run(vec!["make"], Some(dir));
+    run(vec!["make"], Some(dir))
 }
 
-fn generate_bindings() {
-    check_witx_bindgen();
+pub fn generate_bindings(
+    toolchain: &str,
+    direction: &str,
+    out_dir: &str,
+    source: &str,
+) -> Result<Output, Error> {
+    check_witx_bindgen()?;
     run(
         vec![
             "witx-bindgen",
-            "c",
-            "--export",
+            toolchain,
+            direction,
             "--out-dir",
-            format!("{}/{}", TESTS_DIR, C_TEST).as_str(),
-            WITX_SOURCE,
+            out_dir,
+            source,
         ],
         None,
-    );
+    )
 }
 
-fn check_witx_bindgen() {
+pub fn check_witx_bindgen() -> Result<(), Error> {
     match process::Command::new("witx-bindgen").spawn() {
         Ok(_) => {
             eprintln!("witx-bindgen already installed");
+            Ok(())
         }
         Err(_) => {
             println!("cannot find witx-bindgen, attempting to install");
@@ -71,12 +60,16 @@ fn check_witx_bindgen() {
                     WITX_BINDGEN_CLI_CRATE,
                 ],
                 None,
-            );
+            )?;
+            Ok(())
         }
     }
 }
 
-fn run<S: Into<String> + AsRef<std::ffi::OsStr>>(args: Vec<S>, dir: Option<String>) {
+pub fn run<S: Into<String> + AsRef<OsStr>>(
+    args: Vec<S>,
+    dir: Option<String>,
+) -> Result<Output, Error> {
     let mut cmd = Command::new(get_os_process());
     cmd.stdout(process::Stdio::piped());
     cmd.stderr(process::Stdio::piped());
@@ -95,10 +88,10 @@ fn run<S: Into<String> + AsRef<std::ffi::OsStr>>(args: Vec<S>, dir: Option<Strin
 
     println!("running {:#?}", cmd);
 
-    cmd.output().unwrap();
+    Ok(cmd.output()?)
 }
 
-fn get_os_process() -> String {
+pub fn get_os_process() -> String {
     if cfg!(target_os = "windows") {
         String::from("powershell.exe")
     } else {

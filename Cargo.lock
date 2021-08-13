@@ -1021,6 +1021,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0a01e0497841a3b2db4f8afa483cce65f7e96a3498bd6c541734792aeac8fe7"
 
 [[package]]
+name = "glass-build"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+]
+
+[[package]]
 name = "glass-cli"
 version = "0.1.0"
 dependencies = [
@@ -1028,6 +1035,7 @@ dependencies = [
  "bytes",
  "env_logger 0.8.4",
  "futures",
+ "glass-build",
  "glass-engine",
  "glass-http",
  "hyper",

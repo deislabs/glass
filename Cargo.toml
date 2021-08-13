@@ -17,10 +17,14 @@ structopt = "0.3.21"
 tokio = { version = "1.1", features = ["full"] }
 wasi-cap-std-sync = "0.28"
 
+[build-dependencies]
+glass-build = { path = "crates/build" }
+
 [workspace]
 members = [
     "crates/engine",
     "crates/http",
+    "crates/build"
 ]
 
 # TODO
