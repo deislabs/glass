@@ -9,6 +9,7 @@ bytes = "1"
 futures = "0.3"
 glass-engine = { path = "crates/engine" }
 glass-http = { path = "crates/http" }
+glass-ping = { path = "crates/ping" }
 env_logger = "0.8"
 log = { version = "0.4", default-features = false }
 hyper = {version = "0.14", features = ["full"]}
@@ -22,9 +23,10 @@ glass-build = { path = "crates/build" }
 
 [workspace]
 members = [
+    "crates/build",
     "crates/engine",
     "crates/http",
-    "crates/build"
+    "crates/ping",
 ]
 
 # TODO

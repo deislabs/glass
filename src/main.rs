@@ -1,5 +1,5 @@
 use anyhow::{bail, Error};
-use glass_cli::HttpCmd;
+use glass_cli::{HttpCmd, PingCmd};
 use structopt::{clap::AppSettings, StructOpt};
 
 #[tokio::main]
@@ -16,6 +16,17 @@ impl Opt {
         match &self.cmd {
             SubCommand::Http(h) => {
                 h.run(
+                    self.server.clone(),
+                    self.reference.clone(),
+                    self.local.clone(),
+                    self.vars.clone(),
+                    dirs,
+                    self.allowed_hosts.clone(),
+                )
+                .await
+            }
+            SubCommand::Ping(p) => {
+                p.run(
                     self.server.clone(),
                     self.reference.clone(),
                     self.local.clone(),
@@ -96,6 +107,7 @@ pub struct Opt {
 #[derive(StructOpt, Debug)]
 pub enum SubCommand {
     Http(HttpCmd),
+    Ping(PingCmd),
 }
 
 fn parse_env_var(s: &str) -> Result<(String, String), Error> {

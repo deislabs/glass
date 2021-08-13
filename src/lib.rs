@@ -1,2 +1,3 @@
-pub mod http;
-pub use http::HttpCmd;
+pub mod commands;
+
+pub use commands::{http::HttpCmd, ping::PingCmd};

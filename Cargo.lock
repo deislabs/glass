@@ -1038,6 +1038,7 @@ dependencies = [
  "glass-build",
  "glass-engine",
  "glass-http",
+ "glass-ping",
  "hyper",
  "log",
  "serde",
@@ -1073,6 +1074,19 @@ dependencies = [
  "glass-engine",
  "http",
  "hyper",
+ "log",
+ "tokio",
+ "witx-bindgen-wasmtime 0.1.0 (git+https://github.com/bytecodealliance/witx-bindgen?rev=f16233e3907d080bad595b42b7b4a083098861d5)",
+]
+
+[[package]]
+name = "glass-ping"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "chrono",
+ "glass-engine",
  "log",
  "tokio",
  "witx-bindgen-wasmtime 0.1.0 (git+https://github.com/bytecodealliance/witx-bindgen?rev=f16233e3907d080bad595b42b7b4a083098861d5)",
