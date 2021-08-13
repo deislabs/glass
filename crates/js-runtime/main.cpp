@@ -80,12 +80,44 @@ void deislabs_http_v01_handler(
         runtime->abort(global_context, "evaluating JS");
 
     auto result = JS::RootedValue(global_context);
-    auto arg = JS::RootedValue(global_context);
-    auto abuf = JS::NewArrayBufferWithContents(global_context, req->f4.val.len, req->f4.val.ptr);
-    arg.setObject(*abuf);
-    auto argsv = JS::HandleValueArray(arg);
 
-    if (!JS_CallFunctionName(global_context, runtime->global, "handler", argsv, &result))
+    auto js_body = JS::RootedValue(global_context);
+    js_body.setObjectOrNull(JS::NewArrayBufferWithContents(global_context, req->f4.val.len, req->f4.val.ptr));
+
+    auto js_method = JS::RootedValue(global_context);
+    switch (req->f0)
+    {
+
+    case DEISLABS_HTTP_V01_METHOD_GET:
+        js_method.setString(JS::RootedString(global_context, JS_NewStringCopyZ(global_context, "GET")));
+        break;
+
+    case DEISLABS_HTTP_V01_METHOD_POST:
+        js_method.setString(JS::RootedString(global_context, JS_NewStringCopyZ(global_context, "POST")));
+        break;
+
+    case DEISLABS_HTTP_V01_METHOD_DELETE:
+        js_method.setString(JS::RootedString(global_context, JS_NewStringCopyZ(global_context, "DELETE")));
+        break;
+
+    case DEISLABS_HTTP_V01_METHOD_PATCH:
+        js_method.setString(JS::RootedString(global_context, JS_NewStringCopyZ(global_context, "PATCH")));
+        break;
+    }
+
+    JS::RootedObject req_obj(global_context, JS_NewPlainObject(global_context));
+    JS::RootedObject res_obj(global_context, JS_NewPlainObject(global_context));
+
+    // TODO
+    // Define property and insert headers in a JS map.
+    JS_SetProperty(global_context, req_obj, "body", js_body);
+    JS_SetProperty(global_context, req_obj, "method", js_method);
+
+    JS::RootedValueArray<2> args(global_context);
+    args[0].setObject(*req_obj);
+    args[1].setObject(*res_obj);
+
+    if (!JS_CallFunctionName(global_context, runtime->global, "handler", args, &result))
     {
         printf("cannot call handler");
     }
@@ -95,25 +127,20 @@ void deislabs_http_v01_handler(
         runtime->process_pending_jobs(global_context);
     } while (js::HasJobsPending(global_context));
 
-    *status = 404;
-}
+    JS::RootedValue rs(global_context);
+    rs.setObject(*res_obj);
 
-void test()
-{
-    auto x = JS::NewArrayBuffer(global_context, 0);
-}
+    JS::RootedValue res_status(global_context);
+    JS_GetProperty(global_context, res_obj, "status", &res_status);
+    *status = (uint16_t)res_status.toInt32();
 
-// static JSBool my_array_dump(JSContext *cx, uintN argc, jsval *vp)
-// {
-//     JSObject *obj;
-//     JS_ValueToObject(cx, vp[0 + 2], &obj);
-//     js::ArrayBuffer *A;
-//     A = js::ArrayBuffer::fromJSObject(obj);
-//     int *B = (int *)A->data;
-//     for (int i = 0; i < A->byteLength / 4; i++)
-//         printf("%i ", B[i]);
-//     return JS_TRUE;
-// }
+    // TODO
+    // Check if res.body is present, and try to read its value, in order,
+    // as ArrayBuffer, Uint8Array, then string.
+    JS::RootedValue res_body(global_context);
+    if (!JS_GetProperty(global_context, res_obj, "body", &res_body))
+        printf("cannot get response body");
+}
 
 WIZER_INIT(store_code_in_global);
 

@@ -7,6 +7,36 @@ in order to execute JavaScript scripts on WASI runtimes.
 The goal is to use the HTTP and other Glass triggers from the parent repository
 and write handlers for them in JavaScript.
 
+### Using the JavaScript engine
+
+Note that currently, support for this is limited to only reading the request
+method and body, and returning the status code.
+
+```js
+async function handler(req, res) {
+  console.log("Value of body: " + new TextDecoder().decode(req.body));
+  console.log("Value of method: " + req.method);
+
+  res.status = 418;
+}
+```
+
+First, build a pre-initialized module by running `make runtime.wasm`. Then,
+start the module using the Glass HTTP runtime:
+
+```
+➜ curl -i localhost:3000 --data "Handling Glass HTTP requests in JS"
+HTTP/1.1 418 I'm a teapot
+content-length: 0
+
+➜ ./target/release/glass http --local crates/js-runtime/initialized.wasm
+Value of body: Handling Glass HTTP requests in JS
+Value of method: POST
+The answer to life, the universe, and everything: 42
+INFO  glass_runtime_http::runtime] Result status code: 418
+INFO  glass_runtime_http::runtime] Total request execution time: 26.9954ms
+```
+
 ### Building
 
 Building the JavaScript runtime is currently only tested on Linux.
