@@ -26,15 +26,15 @@ impl TimerTrigger {
                 ))
                 .await?;
 
-            log::info!("Result: {}", res);
+            log::info!("{}\n", res);
         }
     }
 }
 
-type InnerEngine = glass_engine::InnerEngine<DeislabsPingV01Data>;
+type WasiEngine = glass_engine::WasiExecutionEngine<DeislabsPingV01Data>;
 
 #[derive(Clone)]
-pub struct PingEngine(pub Arc<InnerEngine>);
+pub struct PingEngine(pub Arc<WasiEngine>);
 
 #[async_trait]
 impl PingEngineTrait for PingEngine {

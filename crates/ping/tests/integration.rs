@@ -1,4 +1,4 @@
-use glass_engine::InnerEngine;
+use glass_engine::{Config, WasiExecutionEngine};
 use glass_ping::{PingEngine, PingEngineTrait};
 use std::sync::Arc;
 
@@ -15,7 +15,7 @@ async fn test_c_ping() {
 
 async fn test_example(entrypoint: &str, input: String, exp: String) {
     let ie = Arc::new(
-        InnerEngine::new_from_local(entrypoint.to_string(), Vec::new(), Vec::new(), None).unwrap(),
+        WasiExecutionEngine::new_from_local(entrypoint.to_string(), Config::default()).unwrap(),
     );
     let pe = PingEngine(ie);
     let res = pe.execute(input).await.unwrap();
