@@ -10,7 +10,7 @@ use tokio::time;
 witx_bindgen_wasmtime::export!("crates/ping/deislabs_ping_v01.witx");
 
 #[async_trait]
-pub trait PingEngineInterface: Clone + Send + Sync + 'static {
+pub trait Ping: Clone + Send + Sync + 'static {
     async fn execute(&self, input: String) -> Result<String, Error>;
 }
 
@@ -19,7 +19,7 @@ pub struct TimerTrigger {
 }
 
 impl TimerTrigger {
-    pub async fn run(&self, runtime: impl PingEngineInterface) -> Result<(), Error> {
+    pub async fn run(&self, runtime: impl Ping) -> Result<(), Error> {
         let mut interval = time::interval(self.interval);
         loop {
             interval.tick().await;
@@ -41,7 +41,7 @@ type WasiExecutionContext = glass_engine::WasiExecutionContext<DeislabsPingV01Da
 pub struct PingEngine(pub Arc<WasiExecutionContext>);
 
 #[async_trait]
-impl PingEngineInterface for PingEngine {
+impl Ping for PingEngine {
     async fn execute(&self, input: String) -> Result<String, Error> {
         let start = Instant::now();
         let (mut store, instance) = self.0.prepare_exec(None)?;

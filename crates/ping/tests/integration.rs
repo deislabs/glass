@@ -1,5 +1,5 @@
 use glass_engine::{Config, WasiExecutionContext};
-use glass_ping::{PingEngine, PingEngineInterface};
+use glass_ping::{Ping, PingEngine};
 use std::sync::Arc;
 
 const SIMPLE_C_MODULE: &str = "tests/c/ctest.wasm";
