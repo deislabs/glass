@@ -10,7 +10,7 @@ use std::{sync::Arc, time::Instant};
 use wasmtime::{Instance, InstancePre, Module, Store};
 
 #[derive(Clone)]
-pub struct WasiExecutionEngine<T: Default> {
+pub struct WasiExecutionContext<T: Default> {
     pub entrypoint_path: String,
     pub config: Config,
 
@@ -18,7 +18,7 @@ pub struct WasiExecutionEngine<T: Default> {
     engine: wasmtime::Engine,
 }
 
-impl<T: Default> WasiExecutionEngine<T> {
+impl<T: Default> WasiExecutionContext<T> {
     pub async fn new(
         server: &str,
         reference: &str,

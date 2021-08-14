@@ -1,22 +1,26 @@
 use anyhow::Error;
 use async_trait::async_trait;
 use deislabs_ping_v01::{DeislabsPingV01, DeislabsPingV01Data};
-use std::{sync::Arc, time::Instant};
+use std::{
+    sync::Arc,
+    time::{Duration, Instant},
+};
+use tokio::time;
 
 witx_bindgen_wasmtime::export!("crates/ping/deislabs_ping_v01.witx");
 
 #[async_trait]
-pub trait PingEngineTrait: Clone + Send + Sync + 'static {
+pub trait PingEngineInterface: Clone + Send + Sync + 'static {
     async fn execute(&self, input: String) -> Result<String, Error>;
 }
 
 pub struct TimerTrigger {
-    pub interval: std::time::Duration,
+    pub interval: Duration,
 }
 
 impl TimerTrigger {
-    pub async fn run(&self, runtime: impl PingEngineTrait) -> Result<(), Error> {
-        let mut interval = tokio::time::interval(self.interval);
+    pub async fn run(&self, runtime: impl PingEngineInterface) -> Result<(), Error> {
+        let mut interval = time::interval(self.interval);
         loop {
             interval.tick().await;
             let res = runtime
@@ -31,13 +35,13 @@ impl TimerTrigger {
     }
 }
 
-type WasiEngine = glass_engine::WasiExecutionEngine<DeislabsPingV01Data>;
+type WasiExecutionContext = glass_engine::WasiExecutionContext<DeislabsPingV01Data>;
 
 #[derive(Clone)]
-pub struct PingEngine(pub Arc<WasiEngine>);
+pub struct PingEngine(pub Arc<WasiExecutionContext>);
 
 #[async_trait]
-impl PingEngineTrait for PingEngine {
+impl PingEngineInterface for PingEngine {
     async fn execute(&self, input: String) -> Result<String, Error> {
         let start = Instant::now();
         let (mut store, instance) = self.0.prepare_exec(None)?;

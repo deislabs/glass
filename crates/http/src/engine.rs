@@ -8,11 +8,11 @@ use wasmtime::{Instance, Store};
 
 witx_bindgen_wasmtime::export!("crates/http/deislabs_http_v01.witx");
 
-type WasiEngine = glass_engine::WasiExecutionEngine<DeislabsHttpV01Data>;
-type InnerContext = glass_engine::Context<DeislabsHttpV01Data>;
+type WasiExecutionContext = glass_engine::WasiExecutionContext<DeislabsHttpV01Data>;
+type DataContext = glass_engine::Context<DeislabsHttpV01Data>;
 
 #[derive(Clone)]
-pub struct Engine(pub Arc<WasiEngine>);
+pub struct Engine(pub Arc<WasiExecutionContext>);
 
 #[async_trait]
 impl HttpEngine for Engine {
@@ -31,7 +31,7 @@ impl HttpEngine for Engine {
 impl Engine {
     async fn execute_impl(
         &self,
-        mut store: Store<InnerContext>,
+        mut store: Store<DataContext>,
         instance: Instance,
         req: Request<Body>,
     ) -> Result<Response<Body>, Error> {
