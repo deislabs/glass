@@ -1,6 +1,6 @@
 use anyhow::Error;
 use glass_engine::{Config, WasiExecutionContext};
-use glass_ping::{PingEngine, TimerTrigger};
+use glass_ping::{PingEngine, PingTrigger};
 use std::sync::Arc;
 use structopt::{clap::AppSettings, StructOpt};
 
@@ -47,7 +47,7 @@ impl PingCmd {
             }
         };
 
-        let trigger = TimerTrigger {
+        let trigger = PingTrigger {
             interval: std::time::Duration::from_secs(self.interval_seconds),
         };
 

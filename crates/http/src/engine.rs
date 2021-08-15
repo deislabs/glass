@@ -1,4 +1,4 @@
-use crate::trigger::HttpEngine;
+use crate::trigger::HttpExecutor;
 use anyhow::Error;
 use async_trait::async_trait;
 use deislabs_http_v01::{DeislabsHttpV01, DeislabsHttpV01Data, Method};
@@ -15,7 +15,7 @@ type DataContext = glass_engine::Context<DeislabsHttpV01Data>;
 pub struct Engine(pub Arc<WasiExecutionContext>);
 
 #[async_trait]
-impl HttpEngine for Engine {
+impl HttpExecutor for Engine {
     async fn execute(
         &self,
         req: hyper::Request<hyper::Body>,

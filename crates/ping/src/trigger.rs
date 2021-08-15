@@ -4,16 +4,16 @@ use std::time::Duration;
 use tokio::time;
 
 #[async_trait]
-pub trait Ping: Clone + Send + Sync + 'static {
+pub trait PingExecutor: Clone + Send + Sync + 'static {
     async fn execute(&self, input: String) -> Result<String, Error>;
 }
 
-pub struct TimerTrigger {
+pub struct PingTrigger {
     pub interval: Duration,
 }
 
-impl TimerTrigger {
-    pub async fn run(&self, runtime: impl Ping) -> Result<(), Error> {
+impl PingTrigger {
+    pub async fn run(&self, runtime: impl PingExecutor) -> Result<(), Error> {
         let mut interval = time::interval(self.interval);
         loop {
             interval.tick().await;

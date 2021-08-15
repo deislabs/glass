@@ -1,5 +1,5 @@
 use glass_engine::{Config, WasiExecutionContext};
-use glass_http::{Engine, HttpEngine};
+use glass_http::{Engine, HttpExecutor};
 use hyper::body;
 use std::sync::Arc;
 

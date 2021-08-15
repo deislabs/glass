@@ -1,4 +1,4 @@
-use crate::trigger::Ping;
+use crate::trigger::PingExecutor;
 use anyhow::Error;
 use async_trait::async_trait;
 use deislabs_ping_v01::{DeislabsPingV01, DeislabsPingV01Data};
@@ -15,7 +15,7 @@ type WasiExecutionContext = glass_engine::WasiExecutionContext<DeislabsPingV01Da
 pub struct PingEngine(pub Arc<WasiExecutionContext>);
 
 #[async_trait]
-impl Ping for PingEngine {
+impl PingExecutor for PingEngine {
     async fn execute(&self, input: String) -> Result<String, Error> {
         let start = Instant::now();
         let (mut store, instance) = self.0.prepare_exec(None)?;
