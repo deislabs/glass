@@ -25,6 +25,9 @@ Core concepts:
   trigger or webhook, events on a queue etc) and executes a WASI component using
   a configured engine
 
+Check out [the documentation](docs/readme.md) or see example on how to use Glass
+in [a simple ping example](crates/ping), or [an HTTP engine](crates/http).
+
 _More details on using Glass soon._
 
 ### Notes and acknowledgements
