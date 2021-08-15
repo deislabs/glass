@@ -1,5 +1,5 @@
-use glass_engine::InnerEngine;
-use glass_ping::{PingEngine, PingEngineTrait};
+use glass_engine::{Config, WasiExecutionContext};
+use glass_ping::{Ping, PingEngine};
 use std::sync::Arc;
 
 const SIMPLE_C_MODULE: &str = "tests/c/ctest.wasm";
@@ -15,7 +15,7 @@ async fn test_c_ping() {
 
 async fn test_example(entrypoint: &str, input: String, exp: String) {
     let ie = Arc::new(
-        InnerEngine::new_from_local(entrypoint.to_string(), Vec::new(), Vec::new(), None).unwrap(),
+        WasiExecutionContext::new_from_local(entrypoint.to_string(), Config::default()).unwrap(),
     );
     let pe = PingEngine(ie);
     let res = pe.execute(input).await.unwrap();

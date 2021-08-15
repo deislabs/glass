@@ -6,16 +6,16 @@ use wasi_cap_std_sync::{Dir, WasiCtxBuilder};
 use wasi_common::WasiCtx;
 use wasi_experimental_http_wasmtime::HttpCtx;
 use wasi_nn_onnx_wasmtime::WasiNnTractCtx;
-use wasmtime::{Config, Engine, Linker, Store};
+use wasmtime::{Engine, Linker, Store};
 
-const WASMTIME_CACHE_DIR: &str = ".wasmtime-cache";
+use crate::Config;
+
 const WACM_CACHE_DIR: &str = ".wasi";
 
 #[derive(Default)]
 pub struct Context<T> {
     pub wasi_ctx: Option<WasiCtx>,
     pub tract_ctx: Option<WasiNnTractCtx>,
-
     pub runtime_data: Option<T>,
 }
 
@@ -23,18 +23,16 @@ impl<T: Default> Context<T> {
     #[allow(clippy::type_complexity)]
     pub fn get_engine_store_linker(
         &self,
-        vars: Vec<(String, String)>,
-        preopen_dirs: Vec<(String, String)>,
-        allowed_http_hosts: Option<Vec<String>>,
+        config: Config,
     ) -> Result<(Engine, Store<Context<T>>, Linker<Context<T>>), Error> {
-        let mut config = Config::default();
-        config.wasm_multi_memory(true);
-        config.wasm_module_linking(true);
-        if let Ok(p) = std::fs::canonicalize(WASMTIME_CACHE_DIR) {
-            config.cache_config_load(p)?;
-        };
+        let (wasi_config, vars, preopen_dirs, allowed_http_hosts) = (
+            config.wasi_config.clone(),
+            config.vars.clone(),
+            config.preopen_dirs.clone(),
+            config.allowed_http_hosts,
+        );
 
-        let engine = Engine::new(&config)?;
+        let engine = Engine::new(&wasi_config)?;
         let mut linker: Linker<Context<T>> = Linker::new(&engine);
         let mut store: Store<Context<T>> = Store::new(&engine, Context::default());
 
@@ -86,8 +84,7 @@ impl<T: Default> Context<T> {
     pub fn store_with_data(
         engine: &Engine,
         data: Option<T>,
-        vars: Vec<(String, String)>,
-        preopen_dirs: Vec<(String, String)>,
+        config: Config,
     ) -> Result<Store<Context<T>>, Error> {
         let mut store: Store<Context<T>> = Store::new(&engine, Context::default());
         store.data_mut().runtime_data = data;
@@ -96,9 +93,9 @@ impl<T: Default> Context<T> {
             .inherit_stdin()
             .inherit_stdout()
             .inherit_stderr()
-            .envs(&vars)?;
+            .envs(&config.vars)?;
 
-        let preopen_dirs = Self::compute_preopen_dirs(preopen_dirs)?;
+        let preopen_dirs = Self::compute_preopen_dirs(config.preopen_dirs)?;
 
         for (name, dir) in preopen_dirs.into_iter() {
             builder = builder.preopened_dir(dir, name)?;

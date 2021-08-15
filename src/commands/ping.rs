@@ -1,5 +1,5 @@
 use anyhow::Error;
-use glass_engine::InnerEngine;
+use glass_engine::{Config, WasiExecutionContext};
 use glass_ping::{PingEngine, TimerTrigger};
 use std::sync::Arc;
 use structopt::{clap::AppSettings, StructOpt};
@@ -35,17 +35,17 @@ impl PingCmd {
         preopen_dirs: Vec<(String, String)>,
         allowed_http_hosts: Option<Vec<String>>,
     ) -> Result<(), Error> {
-        let ie = match reference {
-            Some(r) => Arc::new(InnerEngine::new(&server, &r, self.interface.clone(), vars, preopen_dirs, allowed_http_hosts).await?),
+        let config = Config::new(vars, preopen_dirs, allowed_http_hosts);
+
+        let engine = match reference {
+            Some(r) => PingEngine(Arc::new(WasiExecutionContext::new(&server, &r, self.interface.clone(), config).await?)),
             None => {
                 match local {
-                    Some(l) => Arc::new(InnerEngine::new_from_local(l, vars, preopen_dirs, allowed_http_hosts)?),
+                    Some(l) => PingEngine(Arc::new(WasiExecutionContext::new_from_local(l, config)?)),
                     None => panic!("either a remote registry reference or local file must be passed to start the server")
                 }
             }
         };
-
-        let engine = PingEngine(ie);
 
         let trigger = TimerTrigger {
             interval: std::time::Duration::from_secs(self.interval_seconds),
