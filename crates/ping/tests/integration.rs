@@ -14,10 +14,9 @@ async fn test_c_ping() {
 }
 
 async fn test_example(entrypoint: &str, input: String, exp: String) {
-    let ie = Arc::new(
+    let pe = PingEngine(Arc::new(
         WasiExecutionContext::new_from_local(entrypoint.to_string(), Config::default()).unwrap(),
-    );
-    let pe = PingEngine(ie);
+    ));
     let res = pe.execute(input).await.unwrap();
 
     assert_eq!(res, exp);
