@@ -6,10 +6,12 @@ use std::{
     sync::Arc,
     time::Instant,
 };
+use wasmtime::{Instance, Store};
 
 witx_bindgen_wasmtime::export!("crates/ping/deislabs_ping_v01.witx");
 
 type WasiExecutionContext = glass_engine::WasiExecutionContext<DeislabsPingV01Data>;
+type DataContext = glass_engine::Context<DeislabsPingV01Data>;
 
 #[derive(Clone)]
 pub struct PingEngine(pub Arc<WasiExecutionContext>);
@@ -18,15 +20,25 @@ pub struct PingEngine(pub Arc<WasiExecutionContext>);
 impl PingExecutor for PingEngine {
     async fn execute(&self, input: String) -> Result<String, Error> {
         let start = Instant::now();
-        let (mut store, instance) = self.0.prepare_exec(None)?;
+        let (store, instance) = self.0.prepare_exec(None)?;
+        let res = self.execute_impl(store, instance, input).await?;
+        log::info!("Total execution time: {:?}", start.elapsed());
+        Ok(res)
+    }
+}
 
-        let pr = DeislabsPingV01::new(&mut store, &instance, |host| {
+impl PingEngine {
+    async fn execute_impl(
+        &self,
+        mut store: Store<DataContext>,
+        instance: Instance,
+        input: String,
+    ) -> Result<String, Error> {
+        let r = DeislabsPingV01::new(&mut store, &instance, |host| {
             host.runtime_data.as_mut().unwrap()
         })?;
 
-        let res = pr.ping(&mut store, input.as_str())?;
-
-        log::info!("Total execution time: {:?}", start.elapsed());
+        let res = r.ping(&mut store, input.as_str())?;
         Ok(res)
     }
 }

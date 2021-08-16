@@ -12,10 +12,10 @@ type WasiExecutionContext = glass_engine::WasiExecutionContext<DeislabsHttpV01Da
 type DataContext = glass_engine::Context<DeislabsHttpV01Data>;
 
 #[derive(Clone)]
-pub struct Engine(pub Arc<WasiExecutionContext>);
+pub struct HttpEngine(pub Arc<WasiExecutionContext>);
 
 #[async_trait]
-impl HttpExecutor for Engine {
+impl HttpExecutor for HttpEngine {
     async fn execute(
         &self,
         req: hyper::Request<hyper::Body>,
@@ -28,7 +28,7 @@ impl HttpExecutor for Engine {
     }
 }
 
-impl Engine {
+impl HttpEngine {
     async fn execute_impl(
         &self,
         mut store: Store<DataContext>,

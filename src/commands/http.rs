@@ -1,6 +1,6 @@
 use anyhow::Error;
 use glass_engine::{Config, WasiExecutionContext};
-use glass_http::{Engine, HttpTrigger};
+use glass_http::{HttpEngine, HttpTrigger};
 use std::sync::Arc;
 use structopt::{clap::AppSettings, StructOpt};
 
@@ -47,7 +47,7 @@ impl HttpCmd {
             }
         };
 
-        let engine = Engine(ie);
+        let engine = HttpEngine(ie);
 
         let trigger = HttpTrigger {
             address: self.address.clone(),

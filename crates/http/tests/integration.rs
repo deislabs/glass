@@ -1,5 +1,5 @@
 use glass_engine::{Config, WasiExecutionContext};
-use glass_http::{Engine, HttpExecutor};
+use glass_http::{HttpEngine, HttpExecutor};
 use hyper::body;
 use std::sync::Arc;
 
@@ -36,7 +36,7 @@ async fn test_example(entrypoint: &str, exp_status: u16, exp_body: Vec<u8>) {
     let ie = Arc::new(
         WasiExecutionContext::new_from_local(entrypoint.to_string(), Config::default()).unwrap(),
     );
-    let e = Engine(ie);
+    let e = HttpEngine(ie);
     let res = e.execute(req).await.unwrap();
 
     println!("response status: {:?}", res.status());
