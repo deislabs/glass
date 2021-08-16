@@ -38,7 +38,7 @@ impl PingEngine {
             host.runtime_data.as_mut().unwrap()
         })?;
 
-        let res = r.ping(&mut store, input.as_str())?;
+        let res = r.handler(&mut store, input.as_str())?;
         Ok(res)
     }
 }
