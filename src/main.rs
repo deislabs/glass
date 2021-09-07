@@ -1,5 +1,6 @@
 use anyhow::{bail, Error};
 use glass::{HttpCmd, PingCmd};
+use glass_engine::Config;
 use structopt::{clap::AppSettings, StructOpt};
 
 #[tokio::main]
@@ -12,30 +13,11 @@ pub async fn main() -> Result<(), Error> {
 impl Opt {
     pub async fn run(&self) -> Result<(), Error> {
         let dirs = compute_preopen_dirs(self.dirs.clone(), self.map_dirs.clone())?;
+        let config = Config::new(self.vars.clone(), dirs, self.allowed_hosts.clone());
 
         match &self.cmd {
-            SubCommand::Http(h) => {
-                h.run(
-                    self.server.clone(),
-                    self.reference.clone(),
-                    self.local.clone(),
-                    self.vars.clone(),
-                    dirs,
-                    self.allowed_hosts.clone(),
-                )
-                .await
-            }
-            SubCommand::Ping(p) => {
-                p.run(
-                    self.server.clone(),
-                    self.reference.clone(),
-                    self.local.clone(),
-                    self.vars.clone(),
-                    dirs,
-                    self.allowed_hosts.clone(),
-                )
-                .await
-            }
+            SubCommand::Http(h) => h.run(&self.module, &config).await,
+            SubCommand::Ping(p) => p.run(&self.module, &config).await,
         }
     }
 }
@@ -47,14 +29,6 @@ impl Opt {
     global_settings = &[AppSettings::ColoredHelp]
     )]
 pub struct Opt {
-    #[structopt(
-        long = "server",
-        default_value = "http://localhost:8000/v1",
-        global = true,
-        help = "URL of registry server used to pull WASI components"
-    )]
-    pub server: String,
-
     #[structopt(
         short = "e",
         long = "env",
@@ -90,15 +64,8 @@ pub struct Opt {
     )]
     allowed_hosts: Option<Vec<String>>,
 
-    #[structopt(
-        long = "reference",
-        global = true,
-        help = "The full bindle name and version for the entrypoint component"
-    )]
-    pub reference: Option<String>,
-
     #[structopt(long = "local", global = true, help = "Path to local WASI component")]
-    pub local: Option<String>,
+    pub module: String,
 
     #[structopt(subcommand)]
     pub cmd: SubCommand,
