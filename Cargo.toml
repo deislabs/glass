@@ -8,11 +8,11 @@ anyhow = "1.0"
 bytes = "1"
 futures = "0.3"
 glass-engine = { path = "crates/engine" }
-glass-http = { path = "crates/http" }
-glass-ping = { path = "crates/ping" }
+glass-http = { path = "crates/engine/test/http" }
+glass-ping = { path = "crates/engine/test/ping" }
 env_logger = "0.8"
 log = { version = "0.4", default-features = false }
-hyper = {version = "0.14", features = ["full"]}
+hyper = { version = "0.14", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 structopt = "0.3.21"
 tokio = { version = "1.1", features = ["full"] }
@@ -25,15 +25,6 @@ glass-build = { path = "crates/build" }
 members = [
     "crates/build",
     "crates/engine",
-    "crates/http",
-    "crates/ping",
-]
-
-# TODO
-# Remove the component manager from workspace and from submodules
-# once we have a public repository.
-exclude = [
-    "crates/wacm/crates/wacm-bindle",
-    "crates/wacm/crates/wacm-macros",
-    "crates/wacm/crates/wacm"
+    "crates/engine/test/http",
+    "crates/engine/test/ping",
 ]

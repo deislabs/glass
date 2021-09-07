@@ -8,8 +8,7 @@ anyhow = "1.0"
 async-trait = "0.1"
 bindle = { version = "0.3", default-features = false, features = ["client"] }
 log = { version = "0.4", default-features = false }
-witx-bindgen-wasmtime = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "0e087ecc73dd4b74ff48ff28302dd410b10d8e3c"}
-wacm-bindle = { path = "../wacm/crates/wacm-bindle" }
+witx-bindgen-wasmtime = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "0e087ecc73dd4b74ff48ff28302dd410b10d8e3c" }
 wasi-experimental-http-wasmtime = { git = "https://github.com/radu-matei/wasi-experimental-http", branch = "generic-linker" }
 wasi-nn-onnx-wasmtime = { git = "https://github.com/deislabs/wasi-nn-onnx", default-features = true }
 wasmtime = "0.28"

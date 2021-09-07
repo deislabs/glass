@@ -1,3 +1,0 @@
-[submodule "crates/wacm"]
-	path = crates/wacm
-	url = https://github.com/deislabs/wacm

@@ -7,7 +7,7 @@ use std::{
 };
 use tokio::time;
 
-witx_bindgen_wasmtime::export!("crates/ping/deislabs_ping_v01.witx");
+witx_bindgen_wasmtime::export!("crates/engine/test/ping/deislabs_ping_v01.witx");
 
 #[async_trait]
 pub trait Ping: Clone + Send + Sync + 'static {
