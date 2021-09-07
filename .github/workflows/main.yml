@@ -11,9 +11,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-        with:
-          submodules: true
-          token: ${{ secrets.CI_DEISLABS_PRIVATE_REPOS }}
 
       - name: "Install wasi-sdk (linux)"
         run: |
