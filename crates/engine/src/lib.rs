@@ -1,6 +1,5 @@
 use anyhow::Error;
-use bindle::client::Client;
-use std::{fs::OpenOptions, io::Write, path::PathBuf, sync::Arc, time::Instant};
+use std::{sync::Arc, time::Instant};
 use wasi_cap_std_sync::{Dir, WasiCtxBuilder};
 use wasi_common::WasiCtx;
 use wasi_experimental_http_wasmtime::HttpCtx;
@@ -35,17 +34,6 @@ impl Config {
     }
 }
 
-/// The execution context used by engines.
-/// This object can be directly created using its `new` functions,
-/// or granularly configured using a `WasiExecutionContextBuilder`.
-#[derive(Clone)]
-pub struct WasiExecutionContext<T: Default> {
-    pub entrypoint_path: String,
-    pub config: Config,
-    pre: Arc<InstancePre<Context<T>>>,
-    engine: Engine,
-}
-
 /// Runtime data for the instances.
 /// The generic type can either be directly the `-Data` type generated
 /// by witx-bindgen, or if additional host imports need to be configured,
@@ -68,8 +56,21 @@ pub struct WasiExecutionContextBuilder<T: Default> {
 }
 
 impl<T: Default> WasiExecutionContextBuilder<T> {
+    pub fn build_default(entrypoint_path: &str) -> Result<WasiExecutionContext<T>, Error> {
+        let mut builder = Self::default()?;
+        builder.add_all()?;
+        builder.build(entrypoint_path)
+    }
+
+    pub fn default() -> Result<Self, Error> {
+        let config = Config::default();
+
+        Self::new(&config)
+    }
+
     /// Create a new `WasiExecutionContextBuilder`.
-    pub fn new(config: Config) -> Result<Self, Error> {
+    pub fn new(config: &Config) -> Result<Self, Error> {
+        let config = config.clone();
         let engine = Engine::new(&config.wasi_config)?;
         let linker: Linker<Context<T>> = Linker::new(&engine);
         let store: Store<Context<T>> = Store::new(&engine, Context::default());
@@ -118,11 +119,12 @@ impl<T: Default> WasiExecutionContextBuilder<T> {
 
     /// Create a `WasiExecutionContext` using the configured store
     /// and linker, and pre-instantiate the entrypoint WebAssembly module.
-    pub fn build(&mut self, entrypoint_path: String) -> Result<WasiExecutionContext<T>, Error> {
+    pub fn build(&mut self, entrypoint_path: &str) -> Result<WasiExecutionContext<T>, Error> {
         let start = Instant::now();
 
         let (config, engine) = (self.config.clone(), self.engine.clone());
-        let module = Module::from_file(&self.engine, entrypoint_path.clone())?;
+        let module = Module::from_file(&self.engine, &entrypoint_path)?;
+        let entrypoint_path = entrypoint_path.to_string();
         let pre = Arc::new(self.linker.instantiate_pre(&mut self.store, &module)?);
 
         log::info!(
@@ -139,35 +141,18 @@ impl<T: Default> WasiExecutionContextBuilder<T> {
     }
 }
 
+/// The execution context used by engines.
+/// This object can be directly created using its `new` functions,
+/// or granularly configured using a `WasiExecutionContextBuilder`.
+#[derive(Clone)]
+pub struct WasiExecutionContext<T: Default> {
+    entrypoint_path: String,
+    config: Config,
+    pre: Arc<InstancePre<Context<T>>>,
+    engine: Engine,
+}
+
 impl<T: Default> WasiExecutionContext<T> {
-    /// Creates a new `WasiExecutionContext` based on the WASI component reference
-    /// from the registry and configuration.
-    ///
-    /// The WASI context created in this way enables support for HTTP and WASI NN.
-    /// This can be configured by using a `WasiExecutionContextBuilder`.
-    pub async fn new(
-        server: &str,
-        reference: &str,
-        interface_name: String,
-        config: Config,
-    ) -> Result<Self, Error> {
-        let entrypoint_path = entrypoint_from_bindle(server, reference, &interface_name).await?;
-
-        Self::preinstantiate(entrypoint_path, config)
-    }
-
-    /// Create a new `WasiExecutionContext` from a local file.
-    /// See `WasiExecutionContext::new` for details about the resulting instance.
-    pub fn new_from_local(entrypoint_path: String, config: Config) -> Result<Self, Error> {
-        Self::preinstantiate(entrypoint_path, config)
-    }
-
-    fn preinstantiate(entrypoint_path: String, config: Config) -> Result<Self, Error> {
-        let mut builder = WasiExecutionContextBuilder::new(config)?;
-        builder.add_all()?;
-        builder.build(entrypoint_path)
-    }
-
     fn create_store(&self, data: Option<T>) -> Result<Store<Context<T>>, Error> {
         let mut store: Store<Context<T>> = Store::new(&self.engine, Context::default());
         let mut builder = WasiCtxBuilder::new()
@@ -211,48 +196,4 @@ impl<T: Default> WasiExecutionContext<T> {
 
         Ok((store, instance))
     }
-}
-
-const WACM_CACHE_DIR: &str = ".wasi";
-async fn entrypoint_from_bindle(
-    server: &str,
-    reference: &str,
-    desired_interface: &str,
-) -> Result<String, Error> {
-    let start = Instant::now();
-
-    let linking_path = PathBuf::from(WACM_CACHE_DIR).join("_linking");
-    let bindler = Client::new(server)?;
-
-    wacm_bindle::utils::download_bindle(
-        bindler,
-        reference.to_string(),
-        &linking_path,
-        Some("dat".into()),
-    )
-    .await?;
-
-    log::info!("Downloaded bindle in: {:?}", start.elapsed(),);
-
-    let start = Instant::now();
-
-    let out = wacm_bindle::linker::Linker::link_component_for_interface_to_bytes(
-        linking_path.to_string_lossy().into(),
-        desired_interface.to_string(),
-    )?;
-
-    log::info!("Linked bindle in: {:?}", start.elapsed(),);
-
-    let start = Instant::now();
-
-    let entrypoint_path = linking_path.join("entrypoint.wasm");
-    let mut f = OpenOptions::new()
-        .create(true)
-        .write(true)
-        .open(entrypoint_path.clone())?;
-    f.write_all(&out)?;
-
-    log::info!("Wrote entrypoint to file in : {:?}", start.elapsed(),);
-
-    Ok(entrypoint_path.to_string_lossy().to_string())
 }

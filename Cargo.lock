@@ -1055,7 +1055,6 @@ dependencies = [
  "async-trait",
  "bindle",
  "log",
- "wacm-bindle",
  "wasi-cap-std-sync",
  "wasi-common",
  "wasi-experimental-http-wasmtime",
@@ -3012,29 +3011,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5fecdca9a5291cc2b8dcf7dc02453fee791a280f3743cb0905f8822ae463b3fe"
 
 [[package]]
-name = "wacm-bindle"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bindle",
- "bytes",
- "futures",
- "log",
- "serde",
- "serde_json",
- "sha2",
- "tokio",
- "tokio-stream",
- "tokio-util",
- "toml",
- "wasmlink",
- "wasmtime",
- "wasmtime-wasi",
- "wat",
- "witx2 0.1.0 (git+https://github.com/bytecodealliance/witx-bindgen?rev=a67ab5de8f95b04408393a5679952132b18cf508)",
-]
-
-[[package]]
 name = "walkdir"
 version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3214,29 +3190,6 @@ name = "wasm-bindgen-shared"
 version = "0.2.75"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2e0c4a743a309662d45f4ede961d7afa4ba4131a59a639f29b0069c3798bbcc2"
-
-[[package]]
-name = "wasm-encoder"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "51b4949d4f2b25a4b208317dcf86aacef9e7a5884e48dfc45d4aeb91808d6f86"
-dependencies = [
- "leb128",
-]
-
-[[package]]
-name = "wasmlink"
-version = "0.1.0"
-source = "git+https://github.com/bytecodealliance/witx-bindgen?rev=a67ab5de8f95b04408393a5679952132b18cf508#a67ab5de8f95b04408393a5679952132b18cf508"
-dependencies = [
- "anyhow",
- "heck",
- "lazy_static",
- "petgraph",
- "wasm-encoder",
- "wasmparser",
- "witx2 0.1.0 (git+https://github.com/bytecodealliance/witx-bindgen?rev=a67ab5de8f95b04408393a5679952132b18cf508)",
-]
 
 [[package]]
 name = "wasmparser"
@@ -3723,15 +3676,6 @@ dependencies = [
 name = "witx2"
 version = "0.1.0"
 source = "git+https://github.com/bytecodealliance/witx-bindgen?rev=0e087ecc73dd4b74ff48ff28302dd410b10d8e3c#0e087ecc73dd4b74ff48ff28302dd410b10d8e3c"
-dependencies = [
- "anyhow",
- "id-arena",
-]
-
-[[package]]
-name = "witx2"
-version = "0.1.0"
-source = "git+https://github.com/bytecodealliance/witx-bindgen?rev=a67ab5de8f95b04408393a5679952132b18cf508#a67ab5de8f95b04408393a5679952132b18cf508"
 dependencies = [
  "anyhow",
  "id-arena",

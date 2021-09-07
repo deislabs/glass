@@ -1,5 +1,5 @@
 use anyhow::Error;
-use glass_engine::{Config, WasiExecutionContext};
+use glass_engine::{Config, WasiExecutionContextBuilder};
 use glass_ping::{PingEngine, TimerTrigger};
 use std::sync::Arc;
 use structopt::{clap::AppSettings, StructOpt};
@@ -26,26 +26,10 @@ pub struct PingCmd {
 }
 
 impl PingCmd {
-    pub async fn run(
-        &self,
-        server: String,
-        reference: Option<String>,
-        local: Option<String>,
-        vars: Vec<(String, String)>,
-        preopen_dirs: Vec<(String, String)>,
-        allowed_http_hosts: Option<Vec<String>>,
-    ) -> Result<(), Error> {
-        let config = Config::new(vars, preopen_dirs, allowed_http_hosts);
-
-        let engine = match reference {
-            Some(r) => PingEngine(Arc::new(WasiExecutionContext::new(&server, &r, self.interface.clone(), config).await?)),
-            None => {
-                match local {
-                    Some(l) => PingEngine(Arc::new(WasiExecutionContext::new_from_local(l, config)?)),
-                    None => panic!("either a remote registry reference or local file must be passed to start the server")
-                }
-            }
-        };
+    pub async fn run(&self, module: &str, config: &Config) -> Result<(), Error> {
+        let engine = PingEngine(Arc::new(
+            WasiExecutionContextBuilder::new(&config)?.build(&module)?,
+        ));
 
         let trigger = TimerTrigger {
             interval: std::time::Duration::from_secs(self.interval_seconds),

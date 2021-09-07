@@ -1,5 +1,5 @@
 use anyhow::Error;
-use glass_engine::{Config, WasiExecutionContext};
+use glass_engine::{Config, WasiExecutionContextBuilder};
 use glass_http::{Engine, Trigger};
 use std::sync::Arc;
 use structopt::{clap::AppSettings, StructOpt};
@@ -26,28 +26,10 @@ pub struct HttpCmd {
 }
 
 impl HttpCmd {
-    pub async fn run(
-        &self,
-        server: String,
-        reference: Option<String>,
-        local: Option<String>,
-        vars: Vec<(String, String)>,
-        preopen_dirs: Vec<(String, String)>,
-        allowed_http_hosts: Option<Vec<String>>,
-    ) -> Result<(), Error> {
-        let config = Config::new(vars, preopen_dirs, allowed_http_hosts);
-
-        let ie = match reference {
-            Some(r) => Arc::new(WasiExecutionContext::new(&server, &r, self.interface.clone(), config).await?),
-            None => {
-                match local {
-                    Some(l) => Arc::new(WasiExecutionContext::new_from_local(l, config)?),
-                    None => panic!("either a remote registry reference or local file must be passed to start the server")
-                }
-            }
-        };
-
-        let engine = Engine(ie);
+    pub async fn run(&self, module: &str, config: &Config) -> Result<(), Error> {
+        let engine = Engine(Arc::new(
+            WasiExecutionContextBuilder::new(config)?.build(&module)?,
+        ));
 
         let trigger = Trigger {
             address: self.address.clone(),

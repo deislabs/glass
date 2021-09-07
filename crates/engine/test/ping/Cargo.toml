@@ -7,10 +7,10 @@ edition = "2018"
 anyhow = "1.0"
 async-trait = "0.1"
 chrono = "0.4"
-glass-engine = { path = "../engine" }
+glass-engine = { path = "../../" }
 log = { version = "0.4", default-features = false }
 tokio = "1.5.0"
-witx-bindgen-wasmtime = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "f16233e3907d080bad595b42b7b4a083098861d5"}
+witx-bindgen-wasmtime = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "f16233e3907d080bad595b42b7b4a083098861d5" }
 
 [lib]
 doctest = false

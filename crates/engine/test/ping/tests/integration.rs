@@ -1,4 +1,4 @@
-use glass_engine::{Config, WasiExecutionContext};
+use glass_engine::WasiExecutionContextBuilder;
 use glass_ping::{Ping, PingEngine};
 use std::sync::Arc;
 
@@ -15,7 +15,7 @@ async fn test_c_ping() {
 
 async fn test_example(entrypoint: &str, input: String, exp: String) {
     let pe = PingEngine(Arc::new(
-        WasiExecutionContext::new_from_local(entrypoint.to_string(), Config::default()).unwrap(),
+        WasiExecutionContextBuilder::build_default(entrypoint).unwrap(),
     ));
     let res = pe.execute(input).await.unwrap();
 

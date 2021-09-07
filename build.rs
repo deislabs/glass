@@ -1,10 +1,10 @@
 use glass_build::{cargo_build_example, clang_build_example, generate_bindings};
 
-const HTTP_WITX: &str = "crates/http/deislabs_http_v01.witx";
-const HTTP_TESTS_DIR: &str = "crates/http/tests";
+const HTTP_WITX: &str = "crates/engine/test/http/deislabs_http_v01.witx";
+const HTTP_TESTS_DIR: &str = "crates/engine/test/http/tests";
 
-const PING_WITX: &str = "crates/http/deislabs_ping_v01.witx";
-const PING_TESTS_DIR: &str = "crates/ping/tests";
+const PING_WITX: &str = "crates/engine/test/http/deislabs_ping_v01.witx";
+const PING_TESTS_DIR: &str = "crates/engine/test/ping/tests";
 
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
