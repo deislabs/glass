@@ -64,7 +64,12 @@ pub struct Opt {
     )]
     allowed_hosts: Option<Vec<String>>,
 
-    #[structopt(long = "local", global = true, help = "Path to local WASI component")]
+    #[structopt(
+        long = "local",
+        global = true,
+        default_value = "",
+        help = "Path to local WASI component"
+    )]
     pub module: String,
 
     #[structopt(subcommand)]
