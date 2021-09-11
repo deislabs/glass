@@ -11,8 +11,8 @@ ping: function(req: string) -> string
 
 The function is rather simple -- it takes a string as argument, and returns
 another string. Whenever triggered, the execution engine will search for this
-function in the WASI components provided, execute it using the event data from
-the trigger, then return the result. In the next sections, we will create a
+function in the components provided, execute it using the event data from the
+trigger, then return the result. In the next sections, we will create a
 timer-based trigger, write the engine implementation using the Glass toolkit,
 then build an application targeting this service using C.
 
@@ -90,7 +90,7 @@ impl Ping for PingEngine {
             host.runtime_data.as_mut().unwrap()
         })?;
 
-        // Call the `ping` function from the WASI component.
+        // Call the `ping` function from the component.
         let res = pr.ping(&mut store, input.as_str())?;
 
         Ok(res)
@@ -114,10 +114,9 @@ Now that we have an engine and a trigger, putting them together should be
 straightforward:
 
 ```rust
-    let engine = PingEngine(Arc::new(WasiExecutionEngine::new_from_local(
-        "local_wasi_component.wasm",
-        ...
-    )?));
+    let engine = PingEngine(Arc::new(
+        WasiExecutionContextBuilder::new(&config)?.build(&module)?,
+    ));
 
     let trigger = TimerTrigger { interval: Duration::from_secs(2) };
     trigger.run(engine).await
