@@ -1,17 +1,17 @@
 [package]
-name = "glass-engine"
+name    = "glass-engine"
 version = "0.1.0"
 edition = "2018"
 
 [dependencies]
-anyhow = "1.0"
-async-trait = "0.1"
-bindle = { version = "0.3", default-features = false, features = ["client"] }
-log = { version = "0.4", default-features = false }
-witx-bindgen-wasmtime = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "0e087ecc73dd4b74ff48ff28302dd410b10d8e3c" }
-wasi-experimental-http-wasmtime = { git = "https://github.com/radu-matei/wasi-experimental-http", branch = "generic-linker" }
-wasi-nn-onnx-wasmtime = { git = "https://github.com/deislabs/wasi-nn-onnx", default-features = true }
-wasmtime = "0.28"
-wasmtime-wasi = "0.28"
-wasi-common = "0.28"
-wasi-cap-std-sync = "0.28"
+anyhow                          = "1.0"
+async-trait                     = "0.1"
+bindle                          = { version = "0.3", default-features = false, features = ["client"] }
+log                             = { version = "0.4", default-features = false }
+witx-bindgen-wasmtime           = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "0b80c6df4715130c963f8d09b3d99a7c95dd8e63" }
+wasi-experimental-http-wasmtime = "0.6"
+wasi-nn-onnx-wasmtime           = { git = "https://github.com/deislabs/wasi-nn-onnx", default-features = true }
+wasmtime                        = "0.30"
+wasmtime-wasi                   = "0.30"
+wasi-common                     = "0.30"
+wasi-cap-std-sync               = "0.30"

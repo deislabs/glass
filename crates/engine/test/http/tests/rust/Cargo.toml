@@ -1,5 +1,5 @@
 [package]
-name = "simple-rust"
+name    = "simple-rust"
 version = "0.1.0"
 edition = "2018"
 
@@ -7,6 +7,6 @@ edition = "2018"
 crate-type = ["cdylib"]
 
 [dependencies]
-witx-bindgen-rust = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "f16233e3907d080bad595b42b7b4a083098861d5"}
+witx-bindgen-rust = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "0b80c6df4715130c963f8d09b3d99a7c95dd8e63" }
 
 [workspace]
