@@ -16,13 +16,6 @@ pub struct HttpCmd {
         help = "IP address and port to listen on"
     )]
     pub address: String,
-
-    #[structopt(
-        long = "interface",
-        default_value = "deislabs_http_v01",
-        help = "WASI interface the entrypoint component implements"
-    )]
-    pub interface: String,
 }
 
 impl HttpCmd {

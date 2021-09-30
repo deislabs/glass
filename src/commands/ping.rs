@@ -1,46 +1,17 @@
 use anyhow::Error;
 use async_trait::async_trait;
-use chrono::{DateTime, Local};
 use glass_engine::{Config, WasiExecutionContextBuilder};
-use glass_ping::PingEngine;
+use glass_ping::{PingEngine, TimerTrigger};
 use glass_pipeline::{Binding, Pipeline};
-use glass_pipeline::{EventSource, Subscription, Trigger};
 use std::sync::Arc;
-use std::time::Duration;
 use structopt::{clap::AppSettings, StructOpt};
-use tokio::time;
 
-pub struct TimerTrigger {
-    pub interval: Duration,
-}
-
-#[async_trait]
-impl Trigger for TimerTrigger {
-    async fn run<S: Subscription<Self::Event>>(&self, subscription_broker: S) -> Result<(), Error> {
-        let mut interval = time::interval(self.interval);
-        loop {
-            interval.tick().await;
-            subscription_broker.on_event(Local::now())?;
-        }
-    }
-}
-
-impl EventSource for TimerTrigger {
-    type Event = DateTime<chrono::Local>;
-}
 #[derive(StructOpt, Debug)]
 #[structopt(
     about = "Start a simple ping/pong STDIN trigger",
     global_settings = &[AppSettings::ColoredHelp, AppSettings::ArgRequiredElseHelp]
 )]
 pub struct PingCmd {
-    #[structopt(
-        long = "interface",
-        default_value = "deislabs_ping_v01",
-        help = "WASI interface the entrypoint component implements"
-    )]
-    pub interface: String,
-
     #[structopt(
         long = "interval-seconds",
         default_value = "2",

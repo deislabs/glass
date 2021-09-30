@@ -7,7 +7,7 @@ edition = "2018"
 anyhow = "1.0"
 async-trait = "0.1"
 http = "0.2"
-glass-engine = { path = "../../" }
+glass-engine = { path = "../../crates/engine/" }
 hyper = { version = "0.14", features = ["full"] }
 log = { version = "0.4", default-features = false }
 witx-bindgen-wasmtime = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "f16233e3907d080bad595b42b7b4a083098861d5" }

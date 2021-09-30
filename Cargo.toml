@@ -10,8 +10,8 @@ bytes = "1"
 chrono = "0.4"
 futures = "0.3"
 glass-engine = { path = "crates/engine" }
-glass-http = { path = "crates/engine/test/http" }
-glass-ping = { path = "crates/engine/test/ping" }
+glass-http = { path = "test/http" }
+glass-ping = { path = "test/ping" }
 glass-pipeline = { path = "crates/pipeline" }
 env_logger = "0.8"
 log = { version = "0.4", default-features = false }
@@ -28,7 +28,7 @@ glass-build = { path = "crates/build" }
 members = [
     "crates/build",
     "crates/engine",
-    "crates/engine/test/http",
-    "crates/engine/test/ping",
     "crates/pipeline",
+    "test/http",
+    "test/ping",
 ]
