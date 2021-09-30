@@ -1,4 +1,5 @@
 use anyhow::Error;
+use async_trait::async_trait;
 use std::{sync::Arc, time::Instant};
 use wasi_cap_std_sync::{Dir, WasiCtxBuilder};
 use wasi_common::WasiCtx;
@@ -196,4 +197,11 @@ impl<T: Default> WasiExecutionContext<T> {
 
         Ok((store, instance))
     }
+}
+
+#[async_trait]
+pub trait Executor: Clone + Send + Sync + 'static {
+    type Input: Send + Sync + 'static;
+    type Output: Send + Sync + 'static;
+    async fn execute(&self, input: Self::Input) -> Result<Self::Output, Error>;
 }

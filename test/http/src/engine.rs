@@ -6,7 +6,7 @@ use hyper::{Body, Request, Response};
 use std::{str::FromStr, sync::Arc, time::Instant};
 use wasmtime::{Instance, Store};
 
-witx_bindgen_wasmtime::export!("crates/engine/test/http/deislabs_http_v01.witx");
+witx_bindgen_wasmtime::export!("test/http/deislabs_http_v01.witx");
 
 type WasiExecutionContext = glass_engine::WasiExecutionContext<DeislabsHttpV01Data>;
 type DataContext = glass_engine::Context<DeislabsHttpV01Data>;
