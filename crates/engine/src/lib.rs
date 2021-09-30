@@ -1,6 +1,6 @@
 use anyhow::Error;
 use std::{sync::Arc, time::Instant};
-use wasi_cap_std_sync::{Dir, WasiCtxBuilder};
+use wasi_cap_std_sync::{ambient_authority, Dir, WasiCtxBuilder};
 use wasi_common::WasiCtx;
 use wasi_experimental_http_wasmtime::HttpCtx;
 use wasi_nn_onnx_wasmtime::WasiNnTractCtx;
@@ -92,7 +92,7 @@ impl<T: Default> WasiExecutionContextBuilder<T> {
     /// Configure support for experimental outbound HTTP support.
     pub fn add_experimental_http(&mut self) -> Result<&mut Self, Error> {
         HttpCtx::new(self.config.allowed_http_hosts.clone(), None)?
-            .add_to_generic_linker(&mut self.linker)?;
+            .add_to_linker(&mut self.linker)?;
         Ok(self)
     }
 
@@ -179,9 +179,10 @@ impl<T: Default> WasiExecutionContext<T> {
         for (guest, host) in map_dirs.iter() {
             preopen_dirs.push((
                 guest.clone(),
-                anyhow::Context::with_context(unsafe { Dir::open_ambient_dir(host) }, || {
-                    format!("failed to open directory '{}'", host)
-                })?,
+                anyhow::Context::with_context(
+                    Dir::open_ambient_dir(host, ambient_authority()),
+                    || format!("failed to open directory '{}'", host),
+                )?,
             ));
         }
 

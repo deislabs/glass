@@ -1,16 +1,16 @@
 [package]
-name = "glass-ping"
+name    = "glass-ping"
 version = "0.1.0"
 edition = "2018"
 
 [dependencies]
-anyhow = "1.0"
-async-trait = "0.1"
-chrono = "0.4"
-glass-engine = { path = "../../" }
-log = { version = "0.4", default-features = false }
-tokio = "1.5.0"
-witx-bindgen-wasmtime = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "f16233e3907d080bad595b42b7b4a083098861d5" }
+anyhow                = "1.0"
+async-trait           = "0.1"
+chrono                = "0.4"
+glass-engine          = { path = "../../" }
+log                   = { version = "0.4", default-features = false }
+tokio                 = "1.5.0"
+witx-bindgen-wasmtime = { git = "https://github.com/bytecodealliance/witx-bindgen", rev = "0b80c6df4715130c963f8d09b3d99a7c95dd8e63" }
 
 [lib]
 doctest = false
