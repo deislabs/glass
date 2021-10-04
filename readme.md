@@ -1,5 +1,9 @@
 # Glass: a toolkit for building WebAssembly cloud services
 
+> This project is experimental, and in its very early stages of development.
+> They authors strongly encourage people not to take a dependency on the project
+> at this time.
+
 Glass is a collection of building blocks for defining and implementing
 lightweight services that allow users to submit applications as Wasm components
 and execute them in a WebAssembly sandbox when a configured event source
